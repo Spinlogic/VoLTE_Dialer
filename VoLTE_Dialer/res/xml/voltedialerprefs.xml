@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<EditTextPreference
+	    android:key="pref_key_mt_msisdn"
+	    android:title="@string/pref_mt_msisdn"
+	    android:defaultValue="66866618" />
+	<ListPreference 
+	    android:key="pref_key_call_duration"
+	    android:title="@string/pref_callduration"
+	    android:entries="@array/sel_duration"
+	    android:entryValues="@array/sel_duration_intarray"
+	    android:defaultValue="5" />
+	<ListPreference 
+	    android:key="pref_key_time_between_calls"
+	    android:title="@string/pref_timebetweencalls"
+	    android:entries="@array/sel_time"
+	    android:entryValues="@array/sel_time_intarray" 
+	    android:defaultValue="5" />
+</PreferenceScreen>

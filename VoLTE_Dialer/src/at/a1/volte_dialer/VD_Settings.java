@@ -1,0 +1,91 @@
+package at.a1.volte_dialer;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.util.Log;
+
+
+public class VD_Settings {
+	
+	public static final String PREF_MSIDN			= "pref_key_mt_msisdn";
+	public static final String PREF_CALL_DURATION	= "pref_key_call_duration";
+	public static final String PREF_WAIT_TIME		= "pref_key_time_between_calls";
+
+	public static String getStringPref(Context c, String prefname, String defvalue) {
+		String result = defvalue;
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		try {
+			result = prefs.getString(prefname, defvalue);
+		} catch(ClassCastException e) {
+			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+		}
+		return result;
+	}
+	
+	public static boolean setStringPref(Context c, String prefname, String prefvalue) {		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putString(prefname, prefvalue);
+		return editor.commit();
+	}
+	
+	public static boolean getBoolPref(Context c, String prefname, boolean defvalue) {
+		boolean result = defvalue;
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		try {
+			result = prefs.getBoolean(prefname, defvalue);
+		} catch(ClassCastException e) {
+			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+		}
+		return result;
+	}
+	
+	public static boolean setBoolPref(Context c, String prefname, boolean prefvalue) {		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putBoolean(prefname, prefvalue);
+		return editor.commit();
+	}
+	
+	public static long getLongPref(Context c, String prefname, long defvalue) {
+		long result = defvalue;
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		try {
+			result = prefs.getLong(prefname, defvalue);
+		} catch(ClassCastException e) {
+			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+		}
+		return result;
+	}
+	
+	public static boolean setLongPref(Context c, String prefname, long prefvalue) {		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putLong(prefname, prefvalue);
+		return editor.commit();
+	}
+	
+	public static int getIntPref(Context c, String prefname, int defvalue) {
+		int result = defvalue;
+		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		try {
+			result = prefs.getInt(prefname, defvalue);
+		} catch(ClassCastException e) {
+			Log.d("VD_Settings::getIntPref    ClassCastException: ", e.getMessage());
+		}
+		return result;
+	}
+	
+	public static boolean setIntPref(Context c, String prefname, int prefvalue) {		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		SharedPreferences.Editor editor = prefs.edit();
+		editor.putInt(prefname, prefvalue);
+		return editor.commit();
+	}
+	
+}

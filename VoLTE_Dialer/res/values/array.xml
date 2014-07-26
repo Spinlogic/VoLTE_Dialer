@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- Call duration -->
+    <string-array name="sel_duration">
+	    <item>@string/pref_duration_5s</item>
+	    <item>@string/pref_duration_60s</item>
+	    <item>@string/pref_duration_300s</item>
+	    <item>@string/pref_duration_1800s</item>
+	    <item>@string/pref_duration_3600s</item>
+	    <item>@string/pref_duration_7200s</item>
+    </string-array>
+    
+    <string-array name="sel_duration_intarray">
+	    <item>5</item>
+	    <item>60</item>
+	    <item>300</item>
+	    <item>1800</item>
+	    <item>3600</item>
+	    <item>7200</item>
+	</string-array>
+	
+    <!-- Wait time between calls -->
+    <string-array name="sel_time">
+	    <item>@string/pref_sel_5s</item>
+	    <item>@string/pref_sel_60s</item>
+	    <item>@string/pref_sel_300s</item>
+	    <item>@string/pref_sel_1800s</item>
+    </string-array>
+    
+    <string-array name="sel_time_intarray">
+	    <item>5</item>
+	    <item>60</item>
+	    <item>300</item>
+	    <item>1800</item>
+	</string-array>
+	
+</resources>
