@@ -49,6 +49,7 @@ public class Globals {
 	public static String 	msisdn;				// TelNum to call to
 	public static int		callduration;		// in ms
 	public static int		timebetweencalls;	// in ms
+	public static int		iservicestate;		// ServiceState
 	// ---- End variables ----
     
 	

@@ -34,3 +34,12 @@ Icon
 # Files that might appear on external disk
 .Spotlight-V100
 .Trashes
+
+# Files from the following directories
+VoLTE_Dialer/bin/
+VoLTE_Dialer/gen/*
+VoLTE_Dialer/.settings
+/VoLTE_Dialer/assets
+VoLTE_Dialer/.classpath
+VoLTE_Dialer/.project
+VoLTE_Dialer/project.properties

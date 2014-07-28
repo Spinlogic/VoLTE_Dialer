@@ -59,7 +59,7 @@ public class DialerService extends Service {
 
 	@Override
     public IBinder onBind(Intent intent) {
-		// not supporting binding
+		// binding not needed
 		return null;
 	}
 }

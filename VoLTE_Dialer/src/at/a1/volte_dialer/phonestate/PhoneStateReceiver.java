@@ -18,6 +18,35 @@
 
 package at.a1.volte_dialer.phonestate;
 
-public class PhoneStateReceiver {
+import android.content.Context;
+import android.telephony.PhoneStateListener;
+import android.telephony.ServiceState;
+import android.telephony.TelephonyManager;
 
+/**
+ * This class is used to listen for changes in phone state.
+ * 
+ * @author Juan Noguera
+ *
+ */
+public class PhoneStateReceiver extends PhoneStateListener {
+	private static final String TAG = "SosPhoneStateListener";
+	
+	private Context		context;	
+	
+	public PhoneStateReceiver(Context c) {
+		context = c;
+	}
+	
+	@Override
+    public void onServiceStateChanged(ServiceState serviceState) {
+		super.onServiceStateChanged(serviceState);
+		iPhoneState = serviceState.getState();
+	}
+	
+	@Override
+	public void onCallStateChanged(int state, String incomingNumber) {
+		
+	}
+	
 }
