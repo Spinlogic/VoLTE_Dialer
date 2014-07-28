@@ -1,3 +1,22 @@
+/**
+ *  Dialer for testing VoLTE network side KPIs.
+ *  
+ *   Copyright (C) 2014  Spinlogic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+
 package at.a1.volte_dialer;
 
 import java.lang.reflect.Method;
@@ -9,21 +28,27 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
 
-
+/**
+ * Defines global constants, variables and static methods. 
+ * 
+ * @author Juan Noguera
+ *
+ */
 public class Globals {
 	
 	// ---- Constants ----
-	public static final String FN_VDDIR 		= "volte_dialer";		//	This is the directory in the external 
-																		//	storage where reports are stored
-	public static final String FN_VDLOG 		= "vdlog.txt";			//	Log file
+	public static final String FN_VDDIR 	= "volte_dialer";		// This is the directory in the external 
+																	//	storage where reports are stored
+	public static final String FN_VDLOG 	= "vdlog.txt";			// Log file
+	public static final String DEF_MSISDN 	= "";					// Default test number where to call to
 	// ---- End constants ----
 	
 	
 	// ---- Variables ----
-    public static boolean	is_vd_running;		// is the dialer running?	
+    public static boolean	is_vd_running;		// is the dialer running?
 	public static String 	msisdn;				// TelNum to call to
-	public static int		callduration;
-	public static int		timebetweencalls;
+	public static int		callduration;		// in ms
+	public static int		timebetweencalls;	// in ms
 	// ---- End variables ----
     
 	
@@ -95,4 +120,5 @@ public class Globals {
     		Log.d("HWFunctionsContainer.answerCall", "Exception: " + e);
     	}
     }
+    
 }

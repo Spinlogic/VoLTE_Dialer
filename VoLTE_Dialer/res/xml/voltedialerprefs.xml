@@ -3,7 +3,7 @@
 	<EditTextPreference
 	    android:key="pref_key_mt_msisdn"
 	    android:title="@string/pref_mt_msisdn"
-	    android:defaultValue="66866618" />
+	    android:defaultValue="" />
 	<ListPreference 
 	    android:key="pref_key_call_duration"
 	    android:title="@string/pref_callduration"

@@ -1,11 +1,21 @@
-/*******************************************************************************
- * Copyright (c) 2013 The Vodafone Foundation UK.
- * All rights reserved. This program and the accompanying materials
- * belong to The Vodafone Foundation UK.
- * 
- * Contributors:
- *    Juan Noguera - Spinlogic S.L. , Albacete, Spain
- ******************************************************************************/
+/**
+ *  Dialer for testing VoLTE network side KPIs.
+ *  
+ *   Copyright (C) 2014  Spinlogic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package at.a1.volte_dialer;
 
 import java.io.BufferedWriter;
@@ -53,7 +63,7 @@ public class VD_Logger {
 				}
 			}
 			catch (IOException e) {
-				Log.d("sos.SosLogger", "appendLog: " + e.getMessage());
+				Log.d(TAG, METHOD + e.getMessage());
 			}
 		}
 		try {
@@ -68,7 +78,7 @@ public class VD_Logger {
 			buf.close();
 		}
 		catch (IOException e) {
-			Log.d("sos.SosLogger", "appendLog: " + e.getMessage());
+			Log.d(TAG, METHOD + e.getMessage());
 		}
 	}
 }

@@ -1,3 +1,21 @@
+/**
+ *  Dialer for testing VoLTE network side KPIs.
+ *  
+ *   Copyright (C) 2014  Spinlogic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package at.a1.volte_dialer;
 
 import android.app.Activity;
@@ -12,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.os.Build;
+import at.a1.volte_dialer.dialer.DialerService;
 
 public class VDMainActivity extends Activity {
 
@@ -38,6 +57,12 @@ public class VDMainActivity extends Activity {
 	    }
 	    Button button = (Button) findViewById(R.id.startstop_button);
 	    button.setText(btn_text);
+	    if(Globals.msisdn == null || Globals.msisdn.length() < 3) {
+	    	button.setEnabled(false);
+	    }
+	    else {
+	    	button.setEnabled(true);
+	    }
 	}
 	
 	
@@ -80,6 +105,29 @@ public class VDMainActivity extends Activity {
 			return rootView;
 		}
 		
+	}
+	
+	/**
+	 * Processes a clink on the start / stop button
+	 * 
+	 * @param view
+	 */
+	public void processStarStopBtnClick(View view) {
+		String btn_text = "";
+		if(Globals.is_vd_running) {
+			Globals.is_vd_running = false;
+			Intent intent = new Intent(this, DialerService.class);
+    		stopService(intent);
+    		btn_text = getResources().getText(R.string.btn_start).toString();
+		}
+		else {
+			Intent intent = new Intent(this, DialerService.class);
+    		startService(intent);
+    		Globals.is_vd_running = true;
+    		btn_text = getResources().getText(R.string.btn_stop).toString();
+		}
+		Button button = (Button) findViewById(R.id.startstop_button);
+	    button.setText(btn_text);
 	}
 
 }

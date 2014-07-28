@@ -16,18 +16,8 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package at.a1.volte_dialer;
+package at.a1.volte_dialer.phonestate;
 
-import android.app.Activity;
-import android.os.Bundle;
+public class PhoneStateHandler {
 
-public class SettingsActivity extends Activity {
-	@Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        getFragmentManager().beginTransaction()
-                .replace(android.R.id.content, new SettingsFragment())
-                .commit();
-    }
 }
