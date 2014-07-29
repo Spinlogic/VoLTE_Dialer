@@ -22,6 +22,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
+import at.a1.volte_dialer.phonestate.PhoneStateService;
 
 /**
  * This service is used to start and stop the dialer.
@@ -42,10 +43,15 @@ public class DialerService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		final String METHOD = "::onStartCommand()  ";
-		hdialer = new DialerHandler(this);
-		int res = super.onStartCommand(intent, flags, startId);
-		hdialer.start();
+		
+		// start the PhoneStateService
+		Intent psintent = new Intent(this, PhoneStateService.class);
+		startService(psintent);
+		// start dialing loop
+		hdialer = new DialerHandler();
+		hdialer.start(this);
 		Log.d(TAG + METHOD, "service started");
+		int res = super.onStartCommand(intent, flags, startId);
 		return res;
 	}
 		
@@ -53,7 +59,11 @@ public class DialerService extends Service {
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
 		super.onDestroy();
-		hdialer.stop();
+		// stop the PhoneStateService
+		Intent psintent = new Intent(this, PhoneStateService.class);
+		stopService(psintent);
+		// stop dialing loop
+		hdialer.stop(this);
 		Log.d(TAG + METHOD, "service destroyed");
 	}
 

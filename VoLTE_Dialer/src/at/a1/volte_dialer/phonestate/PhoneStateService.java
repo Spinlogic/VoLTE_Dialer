@@ -25,8 +25,13 @@ import android.util.Log;
 
 
 /**
- * This service is used to listen for changes in service state of the phone
- * so that calls are not triggered if the ServiceState is not STATE_IN_SERVICE
+ * This service is used to listen for changes in service and call states of the phone
+ * It is used to:
+ * 		1. make sure that calls are not triggered if the ServiceState is not 
+ * 		   STATE_IN_SERVICE.
+ * 		2. Monitor call state for the calls triggered by the application.
+ * 
+ * This service runs while the Dialer service is running.
  * 
  * @author Juan Noguera
  *
@@ -46,7 +51,7 @@ public class PhoneStateService extends Service {
 		final String METHOD = "::onStartCommand()  ";
 		phoneStateHandler = new PhoneStateHandler(this);
 		int res = super.onStartCommand(intent, flags, startId);
-		phoneStateHandler.start();
+		phoneStateHandler.start(this);
 		Log.d(TAG + METHOD, "service started");
 		return res;
 	}
@@ -55,7 +60,7 @@ public class PhoneStateService extends Service {
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
 		super.onDestroy();
-		phoneStateHandler.stop();
+		phoneStateHandler.stop(this);
 		Log.d(TAG + METHOD, "service destroyed");
 	}
 

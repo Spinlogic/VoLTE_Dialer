@@ -21,6 +21,8 @@ package at.a1.volte_dialer;
 import at.a1.volte_dialer.VD_Logger;
 import android.app.Application;
 import android.content.Context;
+import android.telephony.ServiceState;
+import android.telephony.TelephonyManager;
 
 public class volte_dialer extends Application {
 
@@ -51,6 +53,8 @@ public class volte_dialer extends Application {
         				this, 
         				VD_Settings.PREF_WAIT_TIME,
         				5);
+        
+        Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
     }
 	
 }

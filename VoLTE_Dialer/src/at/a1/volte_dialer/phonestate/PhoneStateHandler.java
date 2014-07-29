@@ -31,23 +31,21 @@ import android.telephony.TelephonyManager;
 public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
 	
-	private Context context;
 	private PhoneStateReceiver stateListener;
-	private TelephonyManager telMng;
 	
-	public PhoneStateHandler(Context c) {
-		context 		= c;
-		stateListener 	= new PhoneStateReceiver(c);
+	public PhoneStateHandler(Context context) {
+		stateListener 	= new PhoneStateReceiver(context);
 	}
 	
-	public void start() {
+	public void start(Context context) {
 	    // Start listening for changes in service and call states
-	    telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 	    telMng.listen(stateListener, PhoneStateListener.LISTEN_CALL_STATE |
 	    			  PhoneStateListener.LISTEN_SERVICE_STATE);
 	}
 	
-	public void stop() {
+	public void stop(Context context) {
+		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
 	}
 }

@@ -24,6 +24,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
+import android.telephony.ServiceState;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
 
@@ -36,37 +38,43 @@ import at.a1.volte_dialer.Globals;
 public class DialerHandler {
 
 	private static final String TAG = "DialerHandler";
-	private Context context;
 	private static CallDescription calldescription;
 	
 	
-	public DialerHandler(Context c) {
-		context = c;
-	}
-	
 	// PUBLIC METHODS
 	
-	public void start() {
-		dialCall(context, Globals.msisdn);
+	public void start(final Context context) {
+		Handler h = new Handler();
+		h.postDelayed(new Runnable() {
+			public void run() {
+			dialCall(context, Globals.msisdn);
+			}
+		}, 2000);	// Give a couple of seconds for PhoneStateHandler to 
+					// find ServiceState
 	}
 	
-	public void stop() {
+	public static void stop(final Context context) {
 		Intent alarmIntent = new Intent(context, DialerReceiver.class);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 		alarmManager.cancel(pendingIntent);
-		
 	}
 	
 	/**
 	 * Terminates an ongoing call
 	 */
 	public static void endCall() {
+		// The call may have been terminated by the PhoneStateReceiver
 		if(calldescription != null) {
 			Globals.hangupCall();
-			calldescription.endCall();
+			calldescription.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
 			calldescription.writeCallInfoToLog();
-			calldescription = null;	// let GC take the object
+			calldescription = null;	// let GC clean up the object
+		}
+		else {
+			calldescription.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
+			calldescription.writeCallInfoToLog();
+			calldescription = null;	// let GC clean up the object
 		}
 	}
 	
@@ -74,24 +82,37 @@ public class DialerHandler {
 		return (calldescription != null) ? true : false;
 	}
 	
+	/**
+	 * This is used by other classes to clear calls
+	 */
+	public static void clearCall() {
+		calldescription = null;
+	}
+	
 	public static void dialCall(final Context c, final String msisdn) {
 		final String METHOD = "::dialCall()  ";
 		
-		// TODO: read ServiceState before triggering a call. Do not trigger calls if state is not STATE_IN_SERVICE
-		Handler h = new Handler();
-		h.postDelayed(new Runnable() {
-			public void run() {
-				Intent intent = new Intent(Intent.ACTION_CALL);
-				intent.setData(Uri.parse("tel:" + msisdn));
-				intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-				c.startActivity(intent);
-				Log.d(TAG + METHOD, "Making call to number: " + msisdn);
-				DialerHandler.calldescription = new CallDescription(c);
-				
-				// Activate an alarm to end the call
-				setAlarm(c, Globals.callduration);
-			}
-		 }, 500);	// Works better if the call is trigger after some delay
+		if(Globals.iservicestate == ServiceState.STATE_IN_SERVICE) {
+			Handler h = new Handler();
+			h.postDelayed(new Runnable() {
+				public void run() {
+					Intent intent = new Intent(Intent.ACTION_CALL);
+					intent.setData(Uri.parse("tel:" + msisdn));
+					intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+					c.startActivity(intent);
+					Log.d(TAG + METHOD, "Making call to number: " + msisdn);
+					DialerHandler.calldescription = new CallDescription(c);
+					
+					// Activate an alarm to end the call
+					setAlarm(c, Globals.callduration);	// TODO: the alarm should be set when the call is established
+				}
+			}, 500);	// Works better if the call is trigger after some delay
+		}
+		else {
+			// wait 10 seconds and try again
+			calldescription = null;
+			setAlarm(c, 10);
+		}
 	}
 	
 	/**
@@ -105,6 +126,14 @@ public class DialerHandler {
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
 		alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+	}
+	
+	public static void setCallState(final int newstate) {
+		calldescription.setState(newstate);
+	}
+	
+	public static int getCallState() {
+		return calldescription.getState();
 	}
 	
 }

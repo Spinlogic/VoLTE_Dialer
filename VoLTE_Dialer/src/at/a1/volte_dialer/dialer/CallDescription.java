@@ -35,6 +35,7 @@ import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
+import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.VD_Logger;
 
 public class CallDescription {
@@ -47,9 +48,15 @@ public class CallDescription {
 	public static final String ACCESS_GSM		= "GSM";
 	public static final String ACCESS_CDMA		= "CDMA";
 	
+	// Call disconnection options
+	public static final int CALL_DISCONNECTED_BY_UE = 0;
+	public static final int CALL_DISCONNECTED_BY_NW = 1;
+	
 	private Context context;
 	private long	starttime;
 	private long	endtime;
+	private int     disconnectionside;  // 0 -> UE, 1 -> NW
+	private int		state;				// call state in TelephonyManager
 	private String	startcellinfo;
 	private String	endcellinfo;
 
@@ -59,31 +66,44 @@ public class CallDescription {
 	 * @param scid	Cell Id when call is started
 	 */
 	public CallDescription(Context c) {
-		context 		= c;
-		starttime		= System.currentTimeMillis();
-		endtime			= 0;
-		startcellinfo	= getCurrentCellId();
-		endcellinfo 	= "";
+		context 			= c;
+		starttime			= System.currentTimeMillis();
+		endtime				= 0;
+		disconnectionside	= 0;
+		state 				= TelephonyManager.CALL_STATE_IDLE;
+		startcellinfo		= getCurrentCellId();
+		endcellinfo 		= "";
 	}
 	
 	/**
 	 * Records data when the call is disconnected.
 	 * 
-	 * @param ecid	Cell Id when the call is disconnected
+	 * @param ds	0 -> call terminated by UE
+	 * 				1 -> call terminated by NW
 	 */
-	public void endCall() {
-		endtime 	= System.currentTimeMillis();
-		endcellinfo = getCurrentCellId();
+	public void endCall(int ds) {
+		state 				= TelephonyManager.CALL_STATE_IDLE;
+		disconnectionside	= ds;
+		endtime 			= System.currentTimeMillis();
+		endcellinfo 		= getCurrentCellId();
 	}
 	
 	/**
 	 * Writes a log entry for the call in the log file.
 	 */
 	public void writeCallInfoToLog() {
-		String logline = Long.toString(starttime) + "," + Long.toString(endtime) + "," + 
-						 Long.toString(endtime - starttime) + "," + startcellinfo + "," + 
-						 endcellinfo;
+		String logline = Long.toString((endtime - starttime) / 1000) + "," + 
+						 Integer.toString(disconnectionside) + "," + 
+						 startcellinfo + "," + endcellinfo;
 		VD_Logger.appendLog(logline);
+	}
+	
+	public void setState(int newstate) {
+		state = newstate;
+	}
+	
+	public int getState() {
+		return state;
 	}
 	
 	// PRIVATE METHODS
