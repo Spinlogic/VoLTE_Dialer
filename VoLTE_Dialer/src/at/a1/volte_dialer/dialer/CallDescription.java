@@ -106,6 +106,10 @@ public class CallDescription {
 		return state;
 	}
 	
+	public int getDisconnectionSide(){
+		return disconnectionside;
+	}
+	
 	// PRIVATE METHODS
 	
 	/**

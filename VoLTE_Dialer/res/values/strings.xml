@@ -7,14 +7,15 @@
     <!--  SETTINGS -->
     <string name="pref_mt_msisdn">MSISDN to call to: </string>
     <string name="pref_callduration">Call duration: </string>
-    <string name="pref_duration_5s">5 s</string>
+    <string name="pref_duration_20s">20 s</string>
     <string name="pref_duration_60s">1 m</string>
     <string name="pref_duration_300s">5 m</string>
     <string name="pref_duration_1800s">30 m</string>
     <string name="pref_duration_3600s">1 h</string>
     <string name="pref_duration_7200s">2 h</string>
     <string name="pref_timebetweencalls">Wait time between calls: </string>
-    <string name="pref_sel_5s">5 s</string>
+    <string name="pref_sel_10s">10 s</string>
+    <string name="pref_sel_20s">20 s</string>
     <string name="pref_sel_60s">1 m</string>
     <string name="pref_sel_300s">5 m</string>
     <string name="pref_sel_1800s">30 m</string>

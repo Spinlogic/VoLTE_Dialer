@@ -10,7 +10,7 @@
     
     <!-- needed by VD_Logger -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-  	<!-- needed by PhoneStateService to read ServiceState -->
+  	<!-- needed by PhoneStateService to read ServiceState  and CallState-->
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <!-- needed by DialerService to make calls -->
     <uses-permission android:name="android.permission.CALL_PHONE" />
@@ -39,7 +39,7 @@
         <service android:name="at.a1.volte_dialer.dialer.DialerService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
-		<receiver android:name="at.a1.volte_dialer.dialer.PhoneStateReceiver" />
+		<receiver android:name="at.a1.volte_dialer.phonestate.PhoneStateReceiver" />
         <service android:name="at.a1.volte_dialer.phonestate.PhoneStateService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />

@@ -9,11 +9,11 @@
 	    android:title="@string/pref_callduration"
 	    android:entries="@array/sel_duration"
 	    android:entryValues="@array/sel_duration_intarray"
-	    android:defaultValue="5" />
+	    android:defaultValue="20" />
 	<ListPreference 
 	    android:key="pref_key_time_between_calls"
 	    android:title="@string/pref_timebetweencalls"
 	    android:entries="@array/sel_time"
 	    android:entryValues="@array/sel_time_intarray" 
-	    android:defaultValue="5" />
+	    android:defaultValue="20" />
 </PreferenceScreen>

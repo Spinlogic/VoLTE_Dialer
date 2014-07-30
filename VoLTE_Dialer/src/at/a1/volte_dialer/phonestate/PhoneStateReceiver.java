@@ -23,6 +23,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
 import at.a1.volte_dialer.Globals;
+import at.a1.volte_dialer.dialer.CallDescription;
 import at.a1.volte_dialer.dialer.DialerHandler;
 
 /**
@@ -32,7 +33,7 @@ import at.a1.volte_dialer.dialer.DialerHandler;
  *
  */
 public class PhoneStateReceiver extends PhoneStateListener {
-	private static final String TAG = "SosPhoneStateListener";
+	private static final String TAG = "PhoneStateReceiver";
 	
 	private Context	context;	
 	
@@ -48,15 +49,15 @@ public class PhoneStateReceiver extends PhoneStateListener {
 	
 	@Override
 	public void onCallStateChanged(int state, String incomingNumber) {
-		if(incomingNumber == null) {	// MO call
+		if(incomingNumber == null || incomingNumber.isEmpty()) {	// MO call
 			switch(state) {
 				case TelephonyManager.CALL_STATE_IDLE:
 					if(DialerHandler.isCallOngoing()) {
 						// The call has been disconnected by the network.
 						// Stop pending alarms to terminate the call from UE side.
 						DialerHandler.stop(context);
-						DialerHandler.clearCall();
-						DialerHandler.endCall();
+						DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
+						DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
 					}
 					break;
 				case TelephonyManager.CALL_STATE_RINGING:
@@ -65,10 +66,8 @@ public class PhoneStateReceiver extends PhoneStateListener {
 					break;
 				case TelephonyManager.CALL_STATE_OFFHOOK:
 					DialerHandler.setCallState(TelephonyManager.CALL_STATE_OFFHOOK); // DEBUG
-					// TODO: check when this state is actually triggered
-					// if triggered when the call is active, then set the callduration alarm here
-					// if when the call is dialing, then wait for four or five seconds to make sure that
-					// there is enough time to connect the call to an autoanswer system.
+					// This state is triggered when the line is seized. The call is being dialed.
+					// There is no call state that indicates that the call is connected.
 					break;
 			}
 			

@@ -83,10 +83,10 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         	Globals.msisdn = sharedPreferences.getString(key, "");
         	MsisdnETPref.setSummary(MsisdnETPref.getText());
         } else if(key.equals(VD_Settings.PREF_CALL_DURATION)) {
-        	Globals.callduration = Integer.parseInt(sharedPreferences.getString(key, "5"));
+        	Globals.callduration = Integer.parseInt(sharedPreferences.getString(key, "20"));
         	CallDurationListPref.setSummary(CallDurationListPref.getEntry());
         } else if(key.equals(VD_Settings.PREF_WAIT_TIME)) {
-        	Globals.timebetweencalls = Integer.parseInt(sharedPreferences.getString(key, "5"));
+        	Globals.timebetweencalls = Integer.parseInt(sharedPreferences.getString(key, "20"));
         	WaitTimeListPref.setSummary(WaitTimeListPref.getEntry());
         }
     }

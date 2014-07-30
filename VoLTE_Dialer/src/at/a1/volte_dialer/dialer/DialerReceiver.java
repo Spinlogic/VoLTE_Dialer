@@ -33,7 +33,7 @@ public class DialerReceiver extends BroadcastReceiver  {
     	
     	if(DialerHandler.isCallOngoing()) {
     		Log.d(TAG + METHOD, "Terminate call.");
-    		DialerHandler.endCall();
+    		DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
     		DialerHandler.setAlarm(context, Globals.timebetweencalls);	
     	}
     	else {

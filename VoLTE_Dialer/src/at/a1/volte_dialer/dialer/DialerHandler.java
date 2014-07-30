@@ -63,31 +63,20 @@ public class DialerHandler {
 	/**
 	 * Terminates an ongoing call
 	 */
-	public static void endCall() {
+	public static void endCall(int side) {
 		// The call may have been terminated by the PhoneStateReceiver
-		if(calldescription != null) {
+		calldescription.endCall(side);
+		if(side == CallDescription.CALL_DISCONNECTED_BY_UE) {
 			Globals.hangupCall();
-			calldescription.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
-			calldescription.writeCallInfoToLog();
-			calldescription = null;	// let GC clean up the object
 		}
-		else {
-			calldescription.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
-			calldescription.writeCallInfoToLog();
-			calldescription = null;	// let GC clean up the object
-		}
+		calldescription.writeCallInfoToLog();
+		calldescription = null;	// let GC clean up the object
 	}
 	
 	public static boolean isCallOngoing() {
 		return (calldescription != null) ? true : false;
 	}
 	
-	/**
-	 * This is used by other classes to clear calls
-	 */
-	public static void clearCall() {
-		calldescription = null;
-	}
 	
 	public static void dialCall(final Context c, final String msisdn) {
 		final String METHOD = "::dialCall()  ";
@@ -104,7 +93,7 @@ public class DialerHandler {
 					DialerHandler.calldescription = new CallDescription(c);
 					
 					// Activate an alarm to end the call
-					setAlarm(c, Globals.callduration);	// TODO: the alarm should be set when the call is established
+					setAlarm(c, Globals.average_call_setup_time + Globals.callduration);	// TODO: the alarm should be set when the call is established
 				}
 			}, 500);	// Works better if the call is trigger after some delay
 		}

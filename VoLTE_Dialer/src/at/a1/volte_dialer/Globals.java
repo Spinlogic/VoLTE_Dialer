@@ -41,6 +41,7 @@ public class Globals {
 																	//	storage where reports are stored
 	public static final String FN_VDLOG 	= "vdlog.txt";			// Log file
 	public static final String DEF_MSISDN 	= "";					// Default test number where to call to
+	public static final int average_call_setup_time = 10;			// Average call setup time to test number in seconds
 	// ---- End constants ----
 	
 	

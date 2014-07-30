@@ -40,8 +40,7 @@ public class PhoneStateHandler {
 	public void start(Context context) {
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-	    telMng.listen(stateListener, PhoneStateListener.LISTEN_CALL_STATE |
-	    			  PhoneStateListener.LISTEN_SERVICE_STATE);
+	    telMng.listen(stateListener, PhoneStateListener.LISTEN_CALL_STATE | PhoneStateListener.LISTEN_SERVICE_STATE);
 	}
 	
 	public void stop(Context context) {

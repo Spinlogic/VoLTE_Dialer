@@ -48,11 +48,11 @@ public class volte_dialer extends Application {
         Globals.callduration = VD_Settings.getIntPref(
         				this, 
         				VD_Settings.PREF_CALL_DURATION,
-        				5);
+        				20);
         Globals.timebetweencalls = VD_Settings.getIntPref(
         				this, 
         				VD_Settings.PREF_WAIT_TIME,
-        				5);
+        				20);
         
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
     }

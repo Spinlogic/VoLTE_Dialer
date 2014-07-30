@@ -19,9 +19,12 @@
 package at.a1.volte_dialer.dialer;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.phonestate.PhoneStateService;
 
 /**
@@ -58,13 +61,24 @@ public class DialerService extends Service {
 	@Override
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
+		final Context context = getApplicationContext();
 		super.onDestroy();
-		// stop the PhoneStateService
-		Intent psintent = new Intent(this, PhoneStateService.class);
-		stopService(psintent);
-		// stop dialing loop
-		hdialer.stop(this);
-		Log.d(TAG + METHOD, "service destroyed");
+		if(DialerHandler.isCallOngoing()) {
+			Globals.hangupCall(); // Disconnect any call that is still ongoing
+		}
+		// Give some time to log the last call. In case there was one ongoing
+		Handler h = new Handler();
+		h.postDelayed(new Runnable() {
+			public void run() {
+				// stop the PhoneStateService
+				Intent psintent = new Intent(context, PhoneStateService.class);
+				stopService(psintent);
+				// stop dialing loop
+				hdialer.stop(context);
+				Log.d(TAG + METHOD, "service destroyed");
+			}
+		}, 1000);	// Give a couple of seconds for PhoneStateHandler to 
+					// find ServiceState
 	}
 
 	@Override
