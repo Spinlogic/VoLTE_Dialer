@@ -37,6 +37,7 @@ import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.VD_Logger;
+import at.a1.volte_dialer.phonestate.PhoneStateReceiver;
 
 public class CallDescription {
 	
@@ -59,6 +60,8 @@ public class CallDescription {
 	private int		state;				// call state in TelephonyManager
 	private String	startcellinfo;
 	private String	endcellinfo;
+	private int		startsignalstrength;
+	private int		endsignalstrength;
 
 	/**
 	 * Constructor.
@@ -73,6 +76,8 @@ public class CallDescription {
 		state 				= TelephonyManager.CALL_STATE_IDLE;
 		startcellinfo		= getCurrentCellId();
 		endcellinfo 		= "";
+		startsignalstrength	= PhoneStateReceiver.signalstrength;
+		endsignalstrength	= 99;	// unknown
 	}
 	
 	/**
@@ -86,6 +91,7 @@ public class CallDescription {
 		disconnectionside	= ds;
 		endtime 			= System.currentTimeMillis();
 		endcellinfo 		= getCurrentCellId();
+		endsignalstrength	= PhoneStateReceiver.signalstrength;
 	}
 	
 	/**
@@ -94,7 +100,8 @@ public class CallDescription {
 	public void writeCallInfoToLog() {
 		String logline = Long.toString((endtime - starttime) / 1000) + "," + 
 						 Integer.toString(disconnectionside) + "," + 
-						 startcellinfo + "," + endcellinfo;
+						 startcellinfo + "," + Integer.toString(startsignalstrength) + 
+						 "," + endcellinfo + "," + Integer.toString(endsignalstrength);
 		VD_Logger.appendLog(logline);
 	}
 	

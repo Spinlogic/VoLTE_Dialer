@@ -57,7 +57,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	    CharSequence[] calldurationentries = CallDurationListPref.getEntries();
 	    CharSequence[] calldurationvalues = CallDurationListPref.getEntryValues();
 	    for(int i = 0; i < calldurationvalues.length; i++) {
-	    	if(Globals.timebetweencalls == Integer.parseInt(calldurationvalues[i].toString())) {
+	    	if(Globals.callduration == Integer.parseInt(calldurationvalues[i].toString())) {
 	    		CallDurationListPref.setSummary(calldurationentries[i]);
 	    	}
 	    }

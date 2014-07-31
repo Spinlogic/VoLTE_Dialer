@@ -18,6 +18,7 @@
 
 package at.a1.volte_dialer.dialer;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -35,6 +36,7 @@ import at.a1.volte_dialer.Globals;
  * @author Juan Noguera
  *
  */
+
 public class DialerHandler {
 
 	private static final String TAG = "DialerHandler";
@@ -110,11 +112,17 @@ public class DialerHandler {
 	 * @param c
 	 * @param waittime		in seconds
 	 */
+	@SuppressLint("NewApi")
 	public static void setAlarm(Context c, long waittime) {
 		Intent alarmIntent = new Intent(c, DialerReceiver.class);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
-		alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+		int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+		if (currentapiVersion >= android.os.Build.VERSION_CODES.KITKAT){
+			alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+		} else{
+			alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+		}
 	}
 	
 	public static void setCallState(final int newstate) {

@@ -25,7 +25,7 @@ import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
 
 public class volte_dialer extends Application {
-
+	
 	public volte_dialer() {
 		super();
 	}
@@ -34,27 +34,23 @@ public class volte_dialer extends Application {
 	@Override
 	public void onCreate() {
         super.onCreate();
-        
-        Globals.is_vd_running = false;
-        
         // Init the logger
         VD_Logger.initializeValues();
-        
-        //	init globals        
+		// Initialize global variables 
+        Globals.is_vd_running = false;
         Globals.msisdn = VD_Settings.getStringPref(
         				this,
         				VD_Settings.PREF_MSIDN,
         				Globals.DEF_MSISDN);
-        Globals.callduration = VD_Settings.getIntPref(
-        				this, 
-        				VD_Settings.PREF_CALL_DURATION,
-        				20);
-        Globals.timebetweencalls = VD_Settings.getIntPref(
-        				this, 
-        				VD_Settings.PREF_WAIT_TIME,
-        				20);
-        
+        Globals.callduration = Integer.parseInt(VD_Settings.getStringPref(
+						        				this, 
+						        				VD_Settings.PREF_CALL_DURATION,
+						        				"20"));
+        Globals.timebetweencalls = Integer.parseInt(VD_Settings.getStringPref(
+						        				this, 
+						        				VD_Settings.PREF_WAIT_TIME,
+						        				"20"));
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
     }
-	
+		
 }

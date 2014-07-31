@@ -21,6 +21,7 @@ package at.a1.volte_dialer.phonestate;
 import android.content.Context;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
+import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.dialer.CallDescription;
@@ -35,10 +36,13 @@ import at.a1.volte_dialer.dialer.DialerHandler;
 public class PhoneStateReceiver extends PhoneStateListener {
 	private static final String TAG = "PhoneStateReceiver";
 	
-	private Context	context;	
+	private Context	context;
+	
+	public static int 	signalstrength;
 	
 	public PhoneStateReceiver(Context c) {
-		context = c;
+		context			= c;
+		signalstrength	= 99;	// = Unknown. Values in 3GPP TS27.007
 	}
 	
 	@Override
@@ -74,6 +78,14 @@ public class PhoneStateReceiver extends PhoneStateListener {
 		}
 		else {	// MT call
 			// TODO: ffs.
+		}
+	}
+	
+	@Override
+    public void onSignalStrengthsChanged(SignalStrength strength) {
+		super.onSignalStrengthsChanged(strength);
+		if(strength.isGsm()) {
+			signalstrength = strength.getGsmSignalStrength();
 		}
 	}
 	
