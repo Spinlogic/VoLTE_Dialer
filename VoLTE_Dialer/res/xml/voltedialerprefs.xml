@@ -16,4 +16,12 @@
 	    android:entries="@array/sel_time"
 	    android:entryValues="@array/sel_time_intarray" 
 	    android:defaultValue="20" />
+	<EditTextPreference
+	    android:key="pref_key_sendlogsurl"
+	    android:title="@string/pref_sendurl"
+	    android:defaultValue="" />
+	<CheckBoxPreference
+	    android:key="pref_key_deletelogfile"
+	    android:title="@string/pref_deletelogfile"
+	    android:defaultValue="true" />
 </PreferenceScreen>

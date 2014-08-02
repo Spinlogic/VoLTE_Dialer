@@ -31,7 +31,7 @@ import android.util.Log;
 public class VD_Logger {
 	final static String TAG = "VD_Logger";
 	
-	static File 			logFile;
+	private static File logFile;
 	
 	/**
 	 * Selects the file in which to log data initially.
@@ -80,5 +80,9 @@ public class VD_Logger {
 		catch (IOException e) {
 			Log.d(TAG, METHOD + e.getMessage());
 		}
+	}
+	
+	public static void deleteLog() {
+		logFile.delete();
 	}
 }

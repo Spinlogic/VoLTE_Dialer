@@ -20,17 +20,21 @@ package at.a1.volte_dialer;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
+import android.text.TextUtils;
+import android.widget.Toast;
 
 @SuppressLint("NewApi")
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
 	private static final String TAG = "SettingsFragment";
 	
 	private EditTextPreference MsisdnETPref		= null;
+	private EditTextPreference SendLogsETPref	= null;
 	private ListPreference WaitTimeListPref 	= null;
 	private ListPreference CallDurationListPref = null;
 	
@@ -43,6 +47,11 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	    
 	    MsisdnETPref = (EditTextPreference) findPreference(VD_Settings.PREF_MSIDN);
 	    MsisdnETPref.setSummary(Globals.msisdn);
+	    SendLogsETPref = (EditTextPreference) findPreference(VD_Settings.PREF_SENDLOGSURL);
+	    String sendlogsum = VD_Settings.getStringPref(getActivity(), VD_Settings.PREF_SENDLOGSURL, "");
+	    if(!sendlogsum.isEmpty()) {
+	    	SendLogsETPref.setSummary(sendlogsum);
+	    }
 	    
 	    WaitTimeListPref = (ListPreference) findPreference(VD_Settings.PREF_WAIT_TIME);
 	    CharSequence[] waittimeentries = WaitTimeListPref.getEntries();
@@ -88,7 +97,32 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         } else if(key.equals(VD_Settings.PREF_WAIT_TIME)) {
         	Globals.timebetweencalls = Integer.parseInt(sharedPreferences.getString(key, "20"));
         	WaitTimeListPref.setSummary(WaitTimeListPref.getEntry());
+        } else if(key.equals(VD_Settings.PREF_SENDLOGSURL)) {
+        	String sendlogsum = sharedPreferences.getString(key, "");
+        	if(!sendlogsum.isEmpty()) {
+        		if(isValidUrl(sendlogsum)) {
+        			SendLogsETPref.setSummary(sendlogsum);
+        		}
+        		else {
+        			Toast.makeText(getActivity(), R.string.pref_invalidurl, Toast.LENGTH_SHORT).show();
+        			Editor editor = sharedPreferences.edit();
+        			editor.putString(VD_Settings.PREF_SENDLOGSURL,	"");
+        			editor.commit();
+        		}
+    	    }
         }
     }
+	
+	private boolean isValidUrl(CharSequence url) {
+		boolean isvalid = false;
+		
+		isvalid = Globals.isEmailAddress(url);
+		if(!isvalid) {
+			isvalid = Globals.isUrl(url);
+		}
+		return isvalid;
+	}
+	
+	
 	
 }

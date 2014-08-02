@@ -3,6 +3,12 @@
     tools:context="at.a1.volte_dialer.VolteDialerMainActivity" >
 
     <item
+        android:id="@+id/action_sendlog"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_sendlog"/>
+    
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never"

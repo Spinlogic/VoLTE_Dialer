@@ -38,11 +38,11 @@ public class volte_dialer extends Application {
         VD_Logger.initializeValues();
 		// Initialize global variables 
         Globals.is_vd_running = false;
-        Globals.msisdn = VD_Settings.getStringPref(
-        				this,
-        				VD_Settings.PREF_MSIDN,
-        				Globals.DEF_MSISDN);
-        Globals.callduration = Integer.parseInt(VD_Settings.getStringPref(
+        Globals.msisdn 			= VD_Settings.getStringPref(
+						        				this,
+						        				VD_Settings.PREF_MSIDN,
+						        				Globals.DEF_MSISDN);
+        Globals.callduration	= Integer.parseInt(VD_Settings.getStringPref(
 						        				this, 
 						        				VD_Settings.PREF_CALL_DURATION,
 						        				"20"));
@@ -51,6 +51,7 @@ public class volte_dialer extends Application {
 						        				VD_Settings.PREF_WAIT_TIME,
 						        				"20"));
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
+        Globals.icallnumber 	= 0;
     }
 		
 }

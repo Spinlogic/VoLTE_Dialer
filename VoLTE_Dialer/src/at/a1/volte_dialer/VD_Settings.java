@@ -29,6 +29,8 @@ public class VD_Settings {
 	public static final String PREF_MSIDN			= "pref_key_mt_msisdn";
 	public static final String PREF_CALL_DURATION	= "pref_key_call_duration";
 	public static final String PREF_WAIT_TIME		= "pref_key_time_between_calls";
+	public static final String PREF_SENDLOGSURL		= "pref_key_sendlogsurl";
+	public static final String PREF_DELETELOG		= "pref_key_deletelogfile";
 
 	public static String getStringPref(Context c, String prefname, String defvalue) {
 		String result = defvalue;
@@ -75,7 +77,7 @@ public class VD_Settings {
 		try {
 			result = prefs.getLong(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+			Log.d("VD_Settings::getLongPref    ClassCastException: ", e.getMessage());
 		}
 		return result;
 	}

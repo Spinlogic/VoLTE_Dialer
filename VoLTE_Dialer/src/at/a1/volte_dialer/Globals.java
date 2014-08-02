@@ -19,14 +19,18 @@
 
 package at.a1.volte_dialer;
 
+import java.io.File;
 import java.lang.reflect.Method;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
 /**
  * Defines global constants, variables and static methods. 
@@ -35,6 +39,7 @@ import android.view.KeyEvent;
  *
  */
 public class Globals {
+	final static String TAG = "Globals";
 	
 	// ---- Constants ----
 	public static final String FN_VDDIR 	= "volte_dialer";		// This is the directory in the external 
@@ -51,6 +56,8 @@ public class Globals {
 	public static int		callduration;		// in ms
 	public static int		timebetweencalls;	// in ms
 	public static int		iservicestate;		// ServiceState
+	public static int		icallnumber;		// used to display the call number that is being executed 
+												// since the start of this dialer session
 	// ---- End variables ----
     
 	
@@ -60,6 +67,7 @@ public class Globals {
 	 * Uses reflection to hangup an active call 
 	 */
 	public static void hangupCall(){
+		final String METHOD = ":hangupCall()  ";
 		try {
 	        //String serviceManagerName = "android.os.IServiceManager";
 	        String serviceManagerName = "android.os.ServiceManager";
@@ -107,20 +115,33 @@ public class Globals {
 	        telephonyEndCall.invoke(telephonyObject);
 
 	    } catch (Exception e) {
-			Log.d("HWFunctionsContainer.hangupCall", "Exception: " + e.getMessage());
+			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
 	    }
 	}
 	
-	
     public static void answerCall(Context context) {
+    	final String METHOD = ":answerCall()  ";
     	try {
     		Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
     		i.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP,
     	            KeyEvent.KEYCODE_HEADSETHOOK));
     		context.sendOrderedBroadcast(i, null);
     	} catch(Exception e) {
-    		Log.d("HWFunctionsContainer.answerCall", "Exception: " + e);
+    		Log.d(TAG + METHOD, "Exception: " + e);
     	}
+    }
+
+    public static boolean isEmailAddress(CharSequence addr) {
+    	return android.util.Patterns.EMAIL_ADDRESS.matcher(addr).matches();
+    }
+    
+    public static boolean isUrl(CharSequence addr) {
+    	return android.util.Patterns.WEB_URL.matcher(addr).matches();
+    }
+    
+    public static boolean fileExist(String filepath) {
+    	File path = new File(filepath);
+    	return path.exists();
     }
     
 }

@@ -91,6 +91,7 @@ public class DialerHandler {
 					intent.setData(Uri.parse("tel:" + msisdn));
 					intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
 					c.startActivity(intent);
+					Globals.icallnumber++;	// increment call counter
 					Log.d(TAG + METHOD, "Making call to number: " + msisdn);
 					DialerHandler.calldescription = new CallDescription(c);
 					
