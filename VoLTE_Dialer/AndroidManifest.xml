@@ -43,6 +43,9 @@
         <service android:name="at.a1.volte_dialer.phonestate.PhoneStateService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
+		<service android:name="at.a1.volte_dialer.receiver.ReceiverService"
+		    	 android:enabled="true"
+		    	 android:exported="false" />
     </application>
 
 </manifest>

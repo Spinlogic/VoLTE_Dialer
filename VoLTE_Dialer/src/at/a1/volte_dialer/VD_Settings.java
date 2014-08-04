@@ -27,6 +27,7 @@ import android.util.Log;
 public class VD_Settings {
 	
 	public static final String PREF_MSIDN			= "pref_key_mt_msisdn";
+	public static final String PREF_RECEIVER		= "pref_key_receiver";
 	public static final String PREF_CALL_DURATION	= "pref_key_call_duration";
 	public static final String PREF_WAIT_TIME		= "pref_key_time_between_calls";
 	public static final String PREF_SENDLOGSURL		= "pref_key_sendlogsurl";

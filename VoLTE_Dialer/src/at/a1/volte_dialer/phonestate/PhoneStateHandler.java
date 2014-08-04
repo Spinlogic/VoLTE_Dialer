@@ -19,10 +19,12 @@
 package at.a1.volte_dialer.phonestate;
 
 import java.lang.reflect.Method;
+
 import android.content.Context;
 import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import at.a1.volte_dialer.Globals;
 
 /**
  * This class implements a handler for the PhoneStateService
@@ -42,9 +44,11 @@ public class PhoneStateHandler {
 	public void start(Context context) {
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-	    telMng.listen(stateListener, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | 
-	    							 PhoneStateListener.LISTEN_CALL_STATE | 
-	    							 PhoneStateListener.LISTEN_SERVICE_STATE);
+		int flags = PhoneStateListener.LISTEN_CALL_STATE;
+		if(!Globals.is_receiver) {
+			flags = flags | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | PhoneStateListener.LISTEN_SERVICE_STATE;
+		}
+	    telMng.listen(stateListener, flags);
 	}
 	
 	public void stop(Context context) {
@@ -52,7 +56,7 @@ public class PhoneStateHandler {
 		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
 	}
 	
-	private void registerForDetailedCallEvents(Context context) {
+/*	private void registerForDetailedCallEvents(Context context) {
 		Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
 		Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
 		mMakeDefaultPhone.invoke(null, context);
@@ -64,5 +68,5 @@ public class PhoneStateHandler {
 		new Class[]{Handler.class, Integer.TYPE, Object.class});            
 
 		mRegisterForStateChange.invoke(mPhone, mHandler, CALL_STATE_CHANGED, null);
-	}
+	} */
 }

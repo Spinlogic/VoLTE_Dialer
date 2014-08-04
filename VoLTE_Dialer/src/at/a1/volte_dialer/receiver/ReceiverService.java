@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package at.a1.volte_dialer.dialer;
+package at.a1.volte_dialer.receiver;
 
 import android.app.Service;
 import android.content.Context;
@@ -33,13 +33,11 @@ import at.a1.volte_dialer.phonestate.PhoneStateService;
  * @author Juan Noguera
  *
  */
-public class DialerService extends Service {
+public class ReceiverService extends Service {
 	
-	private final String TAG = "DialerService";
-
-	public static DialerHandler hdialer;
+	private final String TAG = "ReceiverService";
 	
-	public DialerService() {
+	public ReceiverService() {
 		
 	}
 	
@@ -50,9 +48,6 @@ public class DialerService extends Service {
 		// start the PhoneStateService
 		Intent psintent = new Intent(this, PhoneStateService.class);
 		startService(psintent);
-		// start dialing loop
-		hdialer = new DialerHandler();
-		hdialer.start(this);
 		Log.d(TAG + METHOD, "service started");
 		int res = super.onStartCommand(intent, flags, startId);
 		return res;
@@ -63,21 +58,12 @@ public class DialerService extends Service {
 		final String METHOD = "::onDestroy()  ";
 		final Context context = getApplicationContext();
 		super.onDestroy();
-		if(DialerHandler.isCallOngoing()) {
-			Globals.hangupCall(); // Disconnect any call that is still ongoing
+		// Disconnect any ongoing call
+		if(Globals.is_mtc_ongoing == true) {
+			Globals.hangupCall();
 		}
-		// Give some time to log the last call. In case there was one ongoing
-		Handler h = new Handler();
-		h.postDelayed(new Runnable() {
-			public void run() {
-				// stop the PhoneStateService
-				Intent psintent = new Intent(context, PhoneStateService.class);
-				stopService(psintent);
-				// stop dialing loop
-				hdialer.stop(context);
-				Log.d(TAG + METHOD, "service destroyed");
-			}
-		}, 1000);
+		Intent psintent = new Intent(context, PhoneStateService.class);
+		stopService(psintent);
 	}
 
 	@Override

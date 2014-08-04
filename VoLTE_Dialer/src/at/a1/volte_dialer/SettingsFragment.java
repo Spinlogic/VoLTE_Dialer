@@ -19,21 +19,26 @@
 package at.a1.volte_dialer;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
 import android.text.TextUtils;
 import android.widget.Toast;
+import at.a1.volte_dialer.dialer.DialerService;
+import at.a1.volte_dialer.receiver.ReceiverService;
 
 @SuppressLint("NewApi")
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
 	private static final String TAG = "SettingsFragment";
 	
 	private EditTextPreference MsisdnETPref		= null;
+	private CheckBoxPreference ReceiverPref		= null;
 	private EditTextPreference SendLogsETPref	= null;
 	private ListPreference WaitTimeListPref 	= null;
 	private ListPreference CallDurationListPref = null;
@@ -47,6 +52,13 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	    
 	    MsisdnETPref = (EditTextPreference) findPreference(VD_Settings.PREF_MSIDN);
 	    MsisdnETPref.setSummary(Globals.msisdn);
+	    
+	    ReceiverPref = (CheckBoxPreference) findPreference(VD_Settings.PREF_RECEIVER);
+	    String receiversum = (Globals.is_receiver) ? 
+	    					getActivity().getString(R.string.pref_mt_role) : 
+	    					getActivity().getString(R.string.pref_mo_role);
+	    ReceiverPref.setSummary(receiversum);
+	    
 	    SendLogsETPref = (EditTextPreference) findPreference(VD_Settings.PREF_SENDLOGSURL);
 	    String sendlogsum = VD_Settings.getStringPref(getActivity(), VD_Settings.PREF_SENDLOGSURL, "");
 	    if(!sendlogsum.isEmpty()) {
@@ -91,6 +103,27 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 		if(key.equals(VD_Settings.PREF_MSIDN)) {
         	Globals.msisdn = sharedPreferences.getString(key, "");
         	MsisdnETPref.setSummary(MsisdnETPref.getText());
+        } else if(key.equals(VD_Settings.PREF_RECEIVER)) {
+        	Globals.is_receiver = sharedPreferences.getBoolean(key, false);
+        	String receiversum = (Globals.is_receiver) ? 
+ 					getActivity().getString(R.string.pref_mt_role) : 
+ 					getActivity().getString(R.string.pref_mo_role);
+ 			ReceiverPref.setSummary(receiversum);
+ 			if(Globals.is_receiver) {
+ 				if(Globals.is_vd_running) {
+	 				// stop the service that is establishing calls
+	 				Intent intent = new Intent(getActivity(), DialerService.class);
+	 				getActivity().stopService(intent);
+ 				}
+ 				Intent intent = new Intent(getActivity(), ReceiverService.class);
+ 				getActivity().startService(intent);
+ 			}
+ 			else {
+ 				// stop receiver service
+ 				Intent intent = new Intent(getActivity(), ReceiverService.class);
+ 				getActivity().stopService(intent);
+ 			}
+ 			Globals.icallnumber	= 0;	// reset call counter
         } else if(key.equals(VD_Settings.PREF_CALL_DURATION)) {
         	Globals.callduration = Integer.parseInt(sharedPreferences.getString(key, "20"));
         	CallDurationListPref.setSummary(CallDurationListPref.getEntry());

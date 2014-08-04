@@ -5,10 +5,13 @@
     <string name="action_settings">Settings</string>
     <string name="action_sendlog">Send log</string>
     <string name="str_noemailclient">No email clients installed.</string>
-    <string name="str_emailclientchoice">Send email using...</string>
+    <string name="str_emailclientchoice">Send email using &#8230;</string>
        
     <!--  SETTINGS -->
     <string name="pref_mt_msisdn">MSISDN / URI to call to: </string>
+    <string name="pref_receiver">Receiver mode </string>
+    <string name="pref_mt_role">Configured to terminate calls</string>
+    <string name="pref_mo_role">Configured to originate calls</string>
     <string name="pref_callduration">Call duration: </string>
     <string name="pref_duration_20s">20 s</string>
     <string name="pref_duration_60s">1 m</string>
@@ -27,8 +30,14 @@
     <string name="pref_deletelogfile">Delete log after sending it</string>
     
     <!--  MAIN ACTIVITY -->
-    <string name="str_callnum">Call number: </string>
+    <string name="str_role">Role:</string>
+    <string name="str_role_mo">Sender (MO calls)</string>
+    <string name="str_role_mt">Receiver (MT calls)</string>
+    <string name="str_callnum">Call number:</string>
+    <string name="str_timetonextcall">Next call in</string>
+    <string name="str_seconds">seconds</string>
     <string name="btn_start">Start</string>
     <string name="btn_stop">Stop</string>
+    <string name="btn_disabled">Disabled</string>
      
 </resources>

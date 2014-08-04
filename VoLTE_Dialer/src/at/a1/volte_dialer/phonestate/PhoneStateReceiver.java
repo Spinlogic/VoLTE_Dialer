@@ -19,11 +19,15 @@
 package at.a1.volte_dialer.phonestate;
 
 import android.content.Context;
+import android.content.Intent;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.KeyEvent;
 import at.a1.volte_dialer.Globals;
+import at.a1.volte_dialer.VDMainActivity;
 import at.a1.volte_dialer.dialer.CallDescription;
 import at.a1.volte_dialer.dialer.DialerHandler;
 
@@ -53,31 +57,43 @@ public class PhoneStateReceiver extends PhoneStateListener {
 	
 	@Override
 	public void onCallStateChanged(int state, String incomingNumber) {
-		if(incomingNumber == null || incomingNumber.isEmpty()) {	// MO call
-			switch(state) {
-				case TelephonyManager.CALL_STATE_IDLE:
-					if(DialerHandler.isCallOngoing()) {
-						// The call has been disconnected by the network.
-						// Stop pending alarms to terminate the call from UE side.
-						DialerHandler.stop(context);
-						DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
-						DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
+		switch(state) {
+			case TelephonyManager.CALL_STATE_IDLE:
+				if(!Globals.is_receiver && DialerHandler.isCallOngoing()) {
+					// The call has been disconnected by the network.
+					// Stop pending alarms to terminate the call from UE side.
+					DialerHandler.stop(context);
+					DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
+					DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
+					Globals.mainactivity.startNextCallTimer();
+				}
+				Globals.is_mtc_ongoing = false;
+				break;
+			case TelephonyManager.CALL_STATE_RINGING:
+				if(Globals.is_receiver) {
+					boolean autoanswer = false;
+					if(incomingNumber != null && !incomingNumber.isEmpty()) {
+						// right match of the last n - 2 digits
+						String numbertomatch = incomingNumber.substring(2);
+						if(Globals.msisdn.contains(numbertomatch)) {
+							Globals.answerCall(context);
+							Globals.is_mtc_ongoing = true;
+							Globals.icallnumber++;
+							Globals.mainactivity.refreshCallNumber();
+						}
 					}
-					break;
-				case TelephonyManager.CALL_STATE_RINGING:
-					// TODO: only for MT calls
+				}
+				else {
 					DialerHandler.setCallState(TelephonyManager.CALL_STATE_RINGING); // DEBUG
-					break;
-				case TelephonyManager.CALL_STATE_OFFHOOK:
+				}
+				break;
+			case TelephonyManager.CALL_STATE_OFFHOOK:
+				if(!Globals.is_receiver) {
 					DialerHandler.setCallState(TelephonyManager.CALL_STATE_OFFHOOK); // DEBUG
-					// This state is triggered when the line is seized. The call is being dialed.
-					// There is no call state that indicates that the call is connected.
-					break;
-			}
-			
-		}
-		else {	// MT call
-			// TODO: ffs.
+				}
+				// This state is triggered when the line is seized. The call is being dialed.
+				// There is no call state that indicates that the call is connected.
+				break;
 		}
 	}
 	

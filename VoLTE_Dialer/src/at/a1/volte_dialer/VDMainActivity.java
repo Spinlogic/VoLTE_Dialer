@@ -31,6 +31,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,9 +41,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import at.a1.volte_dialer.dialer.DialerService;
+import at.a1.volte_dialer.receiver.ReceiverService;
 
 public class VDMainActivity extends Activity {
-
+	private final String TAG = "VDMainActivity";
+	
+	private Thread count_thread;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -52,29 +57,64 @@ public class VDMainActivity extends Activity {
 			getFragmentManager().beginTransaction()
 					.add(R.id.container, new PlaceholderFragment()).commit();
 		}
+		if(Globals.is_receiver) {
+			Intent intent = new Intent(this, ReceiverService.class);
+			startService(intent);
+		}
+		
+		Globals.mainactivity = this;
+	}
+	
+	@Override
+	protected void onDestroy() {
+		if(Globals.is_receiver) {
+			Intent intent = new Intent(this, ReceiverService.class);
+			stopService(intent);
+		}
+		else {
+			if(Globals.is_vd_running) {
+				Intent intent = new Intent(this, DialerService.class);
+				stopService(intent);
+			}
+		}
+		Globals.mainactivity = null;
+		super.onDestroy();
 	}
 	
 	@Override
 	public void onResume() {
 	    super.onResume();
-	    String btn_text = ""; 
-	    if(Globals.is_vd_running) {
-	    	btn_text = getResources().getText(R.string.btn_stop).toString();
-	    }
-	    else {
-	    	btn_text = getResources().getText(R.string.btn_start).toString();
-	    }
-	    Button button = (Button) findViewById(R.id.startstop_button);
-	    button.setText(btn_text);
+	    String btn_text = "";
+	    // GUI elements for which to set text
+	    Button button 		= (Button) findViewById(R.id.startstop_button);
+	    TextView tv_role 	= (TextView) findViewById(R.id.role_tv);
 	    TextView tv_callnum = (TextView) findViewById(R.id.callnumber_tv);
-	    String txt_callnum = getResources().getText(R.string.str_callnum).toString() + Integer.toString(Globals.icallnumber);
-	    tv_callnum.setText(txt_callnum);
-	    if(Globals.msisdn == null || Globals.msisdn.length() < 3) {
+	    String txt_role = getString(R.string.str_role) + "  ";
+	    if(Globals.is_receiver) {
+	    	btn_text = getString(R.string.btn_disabled);
 	    	button.setEnabled(false);
+	    	txt_role += getString(R.string.str_role_mt);
 	    }
 	    else {
 	    	button.setEnabled(true);
+		    if(Globals.is_vd_running) {
+		    	btn_text = getString(R.string.btn_stop);
+		    }
+		    else {
+		    	btn_text = getString(R.string.btn_start);
+		    }
+		    txt_role += getString(R.string.str_role_mo);
+		    if(Globals.msisdn == null || Globals.msisdn.length() < 3) {
+		    	button.setEnabled(false);
+		    }
+		    else {
+		    	button.setEnabled(true);
+		    }
 	    }
+	    button.setText(btn_text);
+	    tv_role.setText(txt_role);
+	    String txt_callnum = getResources().getText(R.string.str_callnum).toString() + "  " + Integer.toString(Globals.icallnumber);
+	    tv_callnum.setText(txt_callnum);
 	}
 	
 
@@ -157,6 +197,7 @@ public class VDMainActivity extends Activity {
 		if(Globals.is_vd_running) {
 			Globals.is_vd_running = false;
 			Globals.icallnumber	= 0;
+			stopNextCallTimer();
 			Intent intent = new Intent(this, DialerService.class);
     		stopService(intent);
     		btn_text = getResources().getText(R.string.btn_start).toString();
@@ -230,6 +271,67 @@ public class VDMainActivity extends Activity {
     	else {
         	return Intent.createChooser(source, chooserTitle);
         }
+    }
+    
+    public void refreshCallNumber() {
+    	if(Globals.mainactivity != null) {
+    		Globals.mainactivity.runOnUiThread(new Runnable(){
+				public void run(){
+					TextView tv_callnum = (TextView) findViewById(R.id.callnumber_tv);
+					String txt_callnum = getResources().getText(R.string.str_callnum).toString() + "  " + Integer.toString(Globals.icallnumber);
+					tv_callnum.setText(txt_callnum);
+				}
+			});
+    	}
+    }
+    
+    public void startNextCallTimer() {
+    	final String METHOD = ".updateNextCallTimer()";
+    	if(Globals.mainactivity != null) {
+/*	    	final String caption = getString(R.string.str_timetonextcall);
+	    	final String units = getString(R.string.str_seconds);
+	    	final TextView tv_counter = (TextView) findViewById(R.id.counter_tv); */
+    		if(count_thread != null) {
+    			count_thread = null;	// MUST be stopped	
+    		}
+	    	count_thread = new Thread() {
+	    		int countdown = Globals.timebetweencalls;
+	    		@Override
+	    		public void run() {
+	                try {
+	                    while (!isInterrupted() && countdown >= 0) {
+	                        Thread.sleep(1000);
+	                        runOnUiThread(new Runnable() {
+	                            @Override
+	                            public void run() {
+	                            	countdown--;
+	                            	String caption = getString(R.string.str_timetonextcall);
+	                            	String units = getString(R.string.str_seconds);
+	                            	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
+	                            	String txtcount = caption + " " + Integer.toString(countdown) + " " + units;
+	                            	tv_counter.setText(txtcount);
+	                            }
+	                        });
+	                    }
+	                } catch (InterruptedException e) {
+	                	Log.e(TAG + METHOD, "InterruptedException catched");
+	                }
+	            }
+	        };
+	
+	        count_thread.start();
+    	}
+    	else {
+    		count_thread = null;
+    	}
+    }
+    
+    public void stopNextCallTimer() {
+    	if(count_thread != null) {
+	    	count_thread.interrupt();
+	    	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
+	    	tv_counter.setText(""); 	// empty the text
+    	}
     }
 
 }

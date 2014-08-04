@@ -18,21 +18,15 @@
 
 package at.a1.volte_dialer.dialer;
 
-import java.lang.reflect.Method;
-
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Binder;
 import android.os.Handler;
-import android.os.IBinder;
 import android.telephony.ServiceState;
-import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.view.KeyEvent;
 import at.a1.volte_dialer.Globals;
 
 /**
@@ -74,7 +68,7 @@ public class DialerHandler {
 		// The call may have been terminated by the PhoneStateReceiver
 		calldescription.endCall(side);
 		if(side == CallDescription.CALL_DISCONNECTED_BY_UE) {
-			hangupCall();
+			Globals.hangupCall();
 		}
 		calldescription.writeCallInfoToLog();
 		calldescription = null;	// let GC clean up the object
@@ -138,73 +132,5 @@ public class DialerHandler {
 	public static int getCallState() {
 		return calldescription.getState();
 	}
-	
-	/**
-	 * Uses reflection to hangup an active call 
-	 */
-	public static void hangupCall(){
-		final String METHOD = ":hangupCall()  ";
-		try {
-	        //String serviceManagerName = "android.os.IServiceManager";
-	        String serviceManagerName = "android.os.ServiceManager";
-	        String serviceManagerNativeName = "android.os.ServiceManagerNative";
-	        String telephonyName = "com.android.internal.telephony.ITelephony";
-
-	        Class telephonyClass;
-	        Class telephonyStubClass;
-	        Class serviceManagerClass;
-	        Class serviceManagerNativeClass;
-	        Class serviceManagerNativeStubClass;
-
-	        //	Method telephonyCall;
-	        Method telephonyEndCall;
-	        //	Method telephonyAnswerCall;
-	        Method getDefault;
-
-	        // Method getService;
-	        Object telephonyObject;
-	        Object serviceManagerObject;
-
-	        telephonyClass = Class.forName(telephonyName);
-	        telephonyStubClass = telephonyClass.getClasses()[0];
-	        serviceManagerClass = Class.forName(serviceManagerName);
-	        serviceManagerNativeClass = Class.forName(serviceManagerNativeName);
-
-	        Method getService = // getDefaults[29];
-	                serviceManagerClass.getMethod("getService", String.class);
-
-	        Method tempInterfaceMethod = serviceManagerNativeClass.getMethod(
-	                					"asInterface", IBinder.class);
-
-	        Binder tmpBinder = new Binder();
-	        tmpBinder.attachInterface(null, "fake");
-
-	        serviceManagerObject = tempInterfaceMethod.invoke(null, tmpBinder);
-	        IBinder retbinder = (IBinder) getService.invoke(serviceManagerObject, "phone");
-	        Method serviceMethod = telephonyStubClass.getMethod("asInterface", IBinder.class);
-
-	        telephonyObject = serviceMethod.invoke(null, retbinder);
-	        //telephonyCall = telephonyClass.getMethod("call", String.class);
-	        telephonyEndCall = telephonyClass.getMethod("endCall");
-	        //telephonyAnswerCall = telephonyClass.getMethod("answerRingingCall");
-
-	        telephonyEndCall.invoke(telephonyObject);
-
-	    } catch (Exception e) {
-			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
-	    }
-	}
-	
-    public static void answerCall(Context context) {
-    	final String METHOD = ":answerCall()  ";
-    	try {
-    		Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
-    		i.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP,
-    	            KeyEvent.KEYCODE_HEADSETHOOK));
-    		context.sendOrderedBroadcast(i, null);
-    	} catch(Exception e) {
-    		Log.d(TAG + METHOD, "Exception: " + e);
-    	}
-    }
 	
 }

@@ -4,18 +4,25 @@
 	    android:key="pref_key_mt_msisdn"
 	    android:title="@string/pref_mt_msisdn"
 	    android:defaultValue="" />
+	<CheckBoxPreference
+	    android:key="pref_key_receiver"
+	    android:title="@string/pref_receiver"
+	    android:defaultValue="false"
+	    android:disableDependentsState="true" />
 	<ListPreference 
 	    android:key="pref_key_call_duration"
 	    android:title="@string/pref_callduration"
 	    android:entries="@array/sel_duration"
 	    android:entryValues="@array/sel_duration_intarray"
-	    android:defaultValue="20" />
+	    android:defaultValue="20" 
+	    android:dependency="pref_key_receiver" />
 	<ListPreference 
 	    android:key="pref_key_time_between_calls"
 	    android:title="@string/pref_timebetweencalls"
 	    android:entries="@array/sel_time"
 	    android:entryValues="@array/sel_time_intarray" 
-	    android:defaultValue="20" />
+	    android:defaultValue="20"
+	    android:dependency="pref_key_receiver" />
 	<EditTextPreference
 	    android:key="pref_key_sendlogsurl"
 	    android:title="@string/pref_sendurl"

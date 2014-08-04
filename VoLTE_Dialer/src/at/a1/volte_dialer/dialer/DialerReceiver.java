@@ -34,11 +34,13 @@ public class DialerReceiver extends BroadcastReceiver  {
     	if(DialerHandler.isCallOngoing()) {
     		Log.d(TAG + METHOD, "Terminate call.");
     		DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
-    		DialerHandler.setAlarm(context, Globals.timebetweencalls);	
+    		DialerHandler.setAlarm(context, Globals.timebetweencalls);
+    		Globals.mainactivity.startNextCallTimer();
     	}
     	else {
     		Log.d(TAG + METHOD, "Trigger new call.");
     		DialerHandler.dialCall(context, Globals.msisdn);
+    		Globals.mainactivity.stopNextCallTimer();
     	}
     }
 	
