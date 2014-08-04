@@ -18,7 +18,9 @@
 
 package at.a1.volte_dialer.phonestate;
 
+import java.lang.reflect.Method;
 import android.content.Context;
+import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
@@ -48,5 +50,19 @@ public class PhoneStateHandler {
 	public void stop(Context context) {
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
+	}
+	
+	private void registerForDetailedCallEvents(Context context) {
+		Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
+		Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
+		mMakeDefaultPhone.invoke(null, context);
+
+		Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", null);
+		Object mPhone = mGetDefaultPhone.invoke(null);
+
+		Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
+		new Class[]{Handler.class, Integer.TYPE, Object.class});            
+
+		mRegisterForStateChange.invoke(mPhone, mHandler, CALL_STATE_CHANGED, null);
 	}
 }

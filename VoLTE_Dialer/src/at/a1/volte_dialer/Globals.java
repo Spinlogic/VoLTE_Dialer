@@ -20,17 +20,6 @@
 package at.a1.volte_dialer;
 
 import java.io.File;
-import java.lang.reflect.Method;
-
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Binder;
-import android.os.Environment;
-import android.os.IBinder;
-import android.util.Log;
-import android.view.KeyEvent;
-import android.widget.Toast;
 
 /**
  * Defines global constants, variables and static methods. 
@@ -62,74 +51,6 @@ public class Globals {
     
 	
 	// ---- Methods ----
-	
-	/**
-	 * Uses reflection to hangup an active call 
-	 */
-	public static void hangupCall(){
-		final String METHOD = ":hangupCall()  ";
-		try {
-	        //String serviceManagerName = "android.os.IServiceManager";
-	        String serviceManagerName = "android.os.ServiceManager";
-	        String serviceManagerNativeName = "android.os.ServiceManagerNative";
-	        String telephonyName = "com.android.internal.telephony.ITelephony";
-
-	        Class telephonyClass;
-	        Class telephonyStubClass;
-	        Class serviceManagerClass;
-	        Class serviceManagerNativeClass;
-	        Class serviceManagerNativeStubClass;
-
-	        //	Method telephonyCall;
-	        Method telephonyEndCall;
-	        //	Method telephonyAnswerCall;
-	        Method getDefault;
-
-	        // Method getService;
-	        Object telephonyObject;
-	        Object serviceManagerObject;
-
-	        telephonyClass = Class.forName(telephonyName);
-	        telephonyStubClass = telephonyClass.getClasses()[0];
-	        serviceManagerClass = Class.forName(serviceManagerName);
-	        serviceManagerNativeClass = Class.forName(serviceManagerNativeName);
-
-	        Method getService = // getDefaults[29];
-	                serviceManagerClass.getMethod("getService", String.class);
-
-	        Method tempInterfaceMethod = serviceManagerNativeClass.getMethod(
-	                					"asInterface", IBinder.class);
-
-	        Binder tmpBinder = new Binder();
-	        tmpBinder.attachInterface(null, "fake");
-
-	        serviceManagerObject = tempInterfaceMethod.invoke(null, tmpBinder);
-	        IBinder retbinder = (IBinder) getService.invoke(serviceManagerObject, "phone");
-	        Method serviceMethod = telephonyStubClass.getMethod("asInterface", IBinder.class);
-
-	        telephonyObject = serviceMethod.invoke(null, retbinder);
-	        //telephonyCall = telephonyClass.getMethod("call", String.class);
-	        telephonyEndCall = telephonyClass.getMethod("endCall");
-	        //telephonyAnswerCall = telephonyClass.getMethod("answerRingingCall");
-
-	        telephonyEndCall.invoke(telephonyObject);
-
-	    } catch (Exception e) {
-			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
-	    }
-	}
-	
-    public static void answerCall(Context context) {
-    	final String METHOD = ":answerCall()  ";
-    	try {
-    		Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
-    		i.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP,
-    	            KeyEvent.KEYCODE_HEADSETHOOK));
-    		context.sendOrderedBroadcast(i, null);
-    	} catch(Exception e) {
-    		Log.d(TAG + METHOD, "Exception: " + e);
-    	}
-    }
 
     public static boolean isEmailAddress(CharSequence addr) {
     	return android.util.Patterns.EMAIL_ADDRESS.matcher(addr).matches();

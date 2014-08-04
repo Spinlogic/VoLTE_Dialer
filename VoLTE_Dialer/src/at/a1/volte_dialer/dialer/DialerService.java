@@ -64,7 +64,7 @@ public class DialerService extends Service {
 		final Context context = getApplicationContext();
 		super.onDestroy();
 		if(DialerHandler.isCallOngoing()) {
-			Globals.hangupCall(); // Disconnect any call that is still ongoing
+			DialerHandler.hangupCall(); // Disconnect any call that is still ongoing
 		}
 		// Give some time to log the last call. In case there was one ongoing
 		Handler h = new Handler();
