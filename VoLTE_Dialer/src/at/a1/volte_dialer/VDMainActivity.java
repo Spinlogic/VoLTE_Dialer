@@ -67,18 +67,23 @@ public class VDMainActivity extends Activity {
 	
 	@Override
 	protected void onDestroy() {
-		if(Globals.is_receiver) {
+/* Services are stopped when this activity is destroyed.
+ * It is assumed that the user wants to use the phone for other purposes.	*/
+	if(Globals.is_receiver) {
 			Intent intent = new Intent(this, ReceiverService.class);
 			stopService(intent);
+	}
+	else {
+		if(Globals.is_vd_running) {
+			Intent intent = new Intent(this, DialerService.class);
+			stopService(intent);
 		}
-		else {
-			if(Globals.is_vd_running) {
-				Intent intent = new Intent(this, DialerService.class);
-				stopService(intent);
-			}
-		}
-		Globals.mainactivity = null;
-		super.onDestroy();
+	}
+	Globals.is_mtc_ongoing = false;
+	Globals.is_vd_running = false;
+	Globals.is_receiver_running = false;
+	Globals.mainactivity = null;
+	super.onDestroy();
 	}
 	
 	@Override

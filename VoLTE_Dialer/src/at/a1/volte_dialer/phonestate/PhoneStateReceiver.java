@@ -65,7 +65,9 @@ public class PhoneStateReceiver extends PhoneStateListener {
 					DialerHandler.stop(context);
 					DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
 					DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
-					Globals.mainactivity.startNextCallTimer();
+					if(Globals.mainactivity != null) {
+						Globals.mainactivity.startNextCallTimer();
+					}
 				}
 				Globals.is_mtc_ongoing = false;
 				break;
@@ -79,7 +81,9 @@ public class PhoneStateReceiver extends PhoneStateListener {
 							Globals.answerCall(context);
 							Globals.is_mtc_ongoing = true;
 							Globals.icallnumber++;
-							Globals.mainactivity.refreshCallNumber();
+							if(Globals.mainactivity != null) {
+								Globals.mainactivity.refreshCallNumber();
+							}
 						}
 					}
 				}

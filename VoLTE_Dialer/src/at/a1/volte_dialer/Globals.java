@@ -49,6 +49,7 @@ public class Globals {
 	
 	// ---- Variables ----
 	public static boolean	is_receiver;		// is the app configured for MO or MT. Receiver = MT.
+	public static boolean	is_receiver_running;// indicates if the receiver service is running
 	public static boolean	is_mtc_ongoing;		// indicates if there is a MT call ongoing
     public static boolean	is_vd_running;		// is the dialer running?
 	public static String 	msisdn;				// TelNum to call to

@@ -35,12 +35,16 @@ public class DialerReceiver extends BroadcastReceiver  {
     		Log.d(TAG + METHOD, "Terminate call.");
     		DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
     		DialerHandler.setAlarm(context, Globals.timebetweencalls);
-    		Globals.mainactivity.startNextCallTimer();
+    		if(Globals.mainactivity != null) {
+    			Globals.mainactivity.startNextCallTimer();
+    		}
     	}
     	else {
     		Log.d(TAG + METHOD, "Trigger new call.");
     		DialerHandler.dialCall(context, Globals.msisdn);
-    		Globals.mainactivity.stopNextCallTimer();
+    		if(Globals.mainactivity != null) {
+    			Globals.mainactivity.stopNextCallTimer();
+    		}
     	}
     }
 	

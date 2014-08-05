@@ -48,6 +48,7 @@ public class ReceiverService extends Service {
 		// start the PhoneStateService
 		Intent psintent = new Intent(this, PhoneStateService.class);
 		startService(psintent);
+		Globals.is_receiver_running = true;
 		Log.d(TAG + METHOD, "service started");
 		int res = super.onStartCommand(intent, flags, startId);
 		return res;
@@ -61,9 +62,12 @@ public class ReceiverService extends Service {
 		// Disconnect any ongoing call
 		if(Globals.is_mtc_ongoing == true) {
 			Globals.hangupCall();
+			Globals.is_mtc_ongoing = false;
 		}
 		Intent psintent = new Intent(context, PhoneStateService.class);
 		stopService(psintent);
+		Globals.is_receiver_running = false;
+		Log.d(TAG + METHOD, "service stopped");
 	}
 
 	@Override

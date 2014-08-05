@@ -18,6 +18,8 @@
 
 package at.a1.volte_dialer.phonestate;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import android.content.Context;
@@ -25,6 +27,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import at.a1.volte_dialer.Globals;
 
 /**
@@ -35,15 +38,18 @@ import at.a1.volte_dialer.Globals;
  */
 public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
+
+	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 1;
 	
 	private PhoneStateReceiver stateListener;
-	private PreciseCallEventsHandler mHandler;
+	private static PreciseCallEventsHandler mHandler;
 	
 	public PhoneStateHandler(Context context) {
 		stateListener 	= new PhoneStateReceiver(context);
 	}
 	
 	public void start(Context context) {
+		registerForDetailedCallEvents();
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		int flags = PhoneStateListener.LISTEN_CALL_STATE;
@@ -54,29 +60,90 @@ public class PhoneStateHandler {
 	}
 	
 	public void stop(Context context) {
+		unregisterForDetailedCallEvents();
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
 	}
 	
+	private void registerForDetailedCallEvents() {
+		final String METHOD = "registerForDetailedCallEvents";
+		try {
+			final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
+			Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
+			Method methodRegisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("registerForPreciseCallStateChanged",
+																new Class[]{Handler.class, Integer.TYPE, Object.class});
+//			methodGetInstance.setAccessible(true);
+			Object mCallManager = methodGetInstance.invoke(null);
+			
+			mHandler = new PreciseCallEventsHandler();
+//			Field pcsc = classCallManager.getDeclaredField("EVENT_PRECISE_CALL_STATE_CHANGED");
+//			pcsc.setAccessible(true);
+			methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
+		} 
+		catch (ClassNotFoundException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+		catch (Exception e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
 	
-	
-	private void registerForDetailedCallEvents(Context context) {
-		final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
-		Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
-		Object mCallManager = methodGetInstance.invoke(null);
-		Method methodRegisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("registerForPreciseCallStateChanged");
-		mHandler = new PreciseCallEventsHandler();
-		methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, CALL_STATE_CHANGED, null);
+	private void unregisterForDetailedCallEvents() {
+		final String METHOD = "unregisterForDetailedCallEvents";
+		try {
+			final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
+			Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
+			Method methodUnregisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("unregisterForPreciseCallStateChanged",
+																new Class[]{Handler.class});
+			Object mCallManager = methodGetInstance.invoke(null);
+			methodUnregisterForPreciseCallStateChanged.invoke(mCallManager, mHandler);
+		} 
+		catch (ClassNotFoundException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+		catch (Exception e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
 	}
 	
     /**
      * Handler of incoming messages from clients.
      */
-    class PreciseCallEventsHandler extends Handler {
+    static class PreciseCallEventsHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case 1:
+                case EVENT_PRECISE_CALL_STATE_CHANGED:
                     break;
                 default:
                     super.handleMessage(msg);
