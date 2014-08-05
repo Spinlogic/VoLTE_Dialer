@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Message;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import at.a1.volte_dialer.Globals;
@@ -36,6 +37,7 @@ public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
 	
 	private PhoneStateReceiver stateListener;
+	private PreciseCallEventsHandler mHandler;
 	
 	public PhoneStateHandler(Context context) {
 		stateListener 	= new PhoneStateReceiver(context);
@@ -56,17 +58,29 @@ public class PhoneStateHandler {
 		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
 	}
 	
-/*	private void registerForDetailedCallEvents(Context context) {
-		Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
-		Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
-		mMakeDefaultPhone.invoke(null, context);
-
-		Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", null);
-		Object mPhone = mGetDefaultPhone.invoke(null);
-
-		Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
-		new Class[]{Handler.class, Integer.TYPE, Object.class});            
-
-		mRegisterForStateChange.invoke(mPhone, mHandler, CALL_STATE_CHANGED, null);
-	} */
+	
+	
+	private void registerForDetailedCallEvents(Context context) {
+		final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
+		Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
+		Object mCallManager = methodGetInstance.invoke(null);
+		Method methodRegisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("registerForPreciseCallStateChanged");
+		mHandler = new PreciseCallEventsHandler();
+		methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, CALL_STATE_CHANGED, null);
+	}
+	
+    /**
+     * Handler of incoming messages from clients.
+     */
+    class PreciseCallEventsHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
 }
