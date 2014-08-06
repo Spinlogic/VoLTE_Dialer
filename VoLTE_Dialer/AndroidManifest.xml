@@ -17,7 +17,12 @@
     <!--  -->
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <!-- needed by DialerService for cell location -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>  
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- needed by PhoneStateHandler to access the mPhoneFactory via reflection -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CONNECTIVITY_INTERNAL" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
     
     <application
         android:allowBackup="true"

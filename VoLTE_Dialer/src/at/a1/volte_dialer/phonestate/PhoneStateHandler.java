@@ -49,7 +49,7 @@ public class PhoneStateHandler {
 	}
 	
 	public void start(Context context) {
-		registerForDetailedCallEvents();
+		registerForDetailedCallEvents2(context);
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		int flags = PhoneStateListener.LISTEN_CALL_STATE;
@@ -136,12 +136,57 @@ public class PhoneStateHandler {
 		}
 	}
 	
+	private void registerForDetailedCallEvents2(Context context) {
+		final String METHOD = "registerForDetailedCallEvents";
+		try {
+			Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
+			Log.d(TAG + METHOD, "DEBUG Point 1");
+			Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
+			Log.d(TAG + METHOD, "DEBUG Point 2");
+			mMakeDefaultPhone.invoke(null, context);
+			Log.d(TAG + METHOD, "DEBUG Point 3");
+
+			Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", (Class[]) null);
+			Log.d(TAG + METHOD, "DEBUG Point 4");
+			Object mPhone = mGetDefaultPhone.invoke(null);
+			Log.d(TAG + METHOD, "DEBUG Point 5");
+			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
+														new Class[]{Handler.class, Integer.TYPE, Object.class});            
+			Log.d(TAG + METHOD, "DEBUG Point 6");
+			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
+			Log.d(TAG + METHOD, "DEBUG Point 7");
+		} 
+		catch (ClassNotFoundException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+		catch (Exception e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
+	
     /**
      * Handler of incoming messages from clients.
      */
     static class PreciseCallEventsHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
+        	final String METHOD = "PreciseCallEventsHandler::handleMessage() DEBUG   ";
+        	Log.d(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
             switch (msg.what) {
                 case EVENT_PRECISE_CALL_STATE_CHANGED:
                     break;

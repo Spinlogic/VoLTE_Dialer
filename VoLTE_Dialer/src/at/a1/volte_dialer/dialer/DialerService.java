@@ -51,8 +51,8 @@ public class DialerService extends Service {
 		Intent psintent = new Intent(this, PhoneStateService.class);
 		startService(psintent);
 		// start dialing loop
-		hdialer = new DialerHandler();
-		hdialer.start(this);
+//		hdialer = new DialerHandler();
+//		hdialer.start(this);
 		Log.d(TAG + METHOD, "service started");
 		int res = super.onStartCommand(intent, flags, startId);
 		return res;

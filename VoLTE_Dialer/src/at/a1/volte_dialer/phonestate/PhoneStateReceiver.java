@@ -18,6 +18,7 @@
 
 package at.a1.volte_dialer.phonestate;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.telephony.PhoneStateListener;
@@ -44,6 +45,7 @@ public class PhoneStateReceiver extends PhoneStateListener {
 	
 	public static int 	signalstrength;
 	
+	@SuppressLint("Instantiatable")
 	public PhoneStateReceiver(Context c) {
 		context			= c;
 		signalstrength	= 99;	// = Unknown. Values in 3GPP TS27.007
