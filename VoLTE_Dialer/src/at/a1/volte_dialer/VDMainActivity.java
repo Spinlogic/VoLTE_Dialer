@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
@@ -84,6 +85,18 @@ public class VDMainActivity extends Activity {
 	Globals.is_receiver_running = false;
 	Globals.mainactivity = null;
 	super.onDestroy();
+	}
+	
+	@Override
+	public void onStart() {
+		super.onStart();
+		
+		int sdk_int = Build.VERSION.SDK_INT;
+		String sdk 	= Build.VERSION.SDK;
+		String cn 	= Build.VERSION.CODENAME;
+		String rel	= Build.VERSION.RELEASE;
+		String inc	= Build.VERSION.INCREMENTAL;
+		int count = 0;
 	}
 	
 	@Override

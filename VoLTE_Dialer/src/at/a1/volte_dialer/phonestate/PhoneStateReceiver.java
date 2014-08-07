@@ -45,7 +45,6 @@ public class PhoneStateReceiver extends PhoneStateListener {
 	
 	public static int 	signalstrength;
 	
-	@SuppressLint("Instantiatable")
 	public PhoneStateReceiver(Context c) {
 		context			= c;
 		signalstrength	= 99;	// = Unknown. Values in 3GPP TS27.007
