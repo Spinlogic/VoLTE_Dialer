@@ -38,11 +38,9 @@ import at.a1.volte_dialer.Globals;
  */
 public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
-
-	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 1;
 	
 	private PhoneStateReceiver stateListener;
-	private static PreciseCallEventsHandler mHandler;
+	
 	
 	public PhoneStateHandler(Context context) {
 		stateListener 	= new PhoneStateReceiver(context);
@@ -75,10 +73,10 @@ public class PhoneStateHandler {
 //			methodGetInstance.setAccessible(true);
 			Object mCallManager = methodGetInstance.invoke(null);
 			
-			mHandler = new PreciseCallEventsHandler();
+//			mHandler = new PreciseCallEventsHandler();
 //			Field pcsc = classCallManager.getDeclaredField("EVENT_PRECISE_CALL_STATE_CHANGED");
 //			pcsc.setAccessible(true);
-			methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
+//			methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
 		} 
 		catch (ClassNotFoundException e) {
 	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
@@ -111,7 +109,7 @@ public class PhoneStateHandler {
 			Method methodUnregisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("unregisterForPreciseCallStateChanged",
 																new Class[]{Handler.class});
 			Object mCallManager = methodGetInstance.invoke(null);
-			methodUnregisterForPreciseCallStateChanged.invoke(mCallManager, mHandler);
+//			methodUnregisterForPreciseCallStateChanged.invoke(mCallManager, mHandler);
 		} 
 		catch (ClassNotFoundException e) {
 	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
@@ -134,65 +132,7 @@ public class PhoneStateHandler {
 		catch (Exception e) {
 	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
 		}
-	}
 	
-	private void registerForDetailedCallEvents2(Context context) {
-		final String METHOD = "registerForDetailedCallEvents";
-		try {
-			Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
-			Log.d(TAG + METHOD, "DEBUG Point 1");
-			Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
-			Log.d(TAG + METHOD, "DEBUG Point 2");
-			mMakeDefaultPhone.invoke(null, context);
-			Log.d(TAG + METHOD, "DEBUG Point 3");
+	}
 
-			Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", (Class[]) null);
-			Log.d(TAG + METHOD, "DEBUG Point 4");
-			Object mPhone = mGetDefaultPhone.invoke(null);
-			Log.d(TAG + METHOD, "DEBUG Point 5");
-			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
-														new Class[]{Handler.class, Integer.TYPE, Object.class});            
-			Log.d(TAG + METHOD, "DEBUG Point 6");
-			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
-			Log.d(TAG + METHOD, "DEBUG Point 7");
-		} 
-		catch (ClassNotFoundException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (NoSuchMethodException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (InvocationTargetException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (IllegalAccessException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (SecurityException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (IllegalArgumentException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-		catch (Exception e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-	}
-	
-    /**
-     * Handler of incoming messages from clients.
-     */
-    static class PreciseCallEventsHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-        	final String METHOD = "PreciseCallEventsHandler::handleMessage() DEBUG   ";
-        	Log.d(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
-            switch (msg.what) {
-                case EVENT_PRECISE_CALL_STATE_CHANGED:
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
 }
