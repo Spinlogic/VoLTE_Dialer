@@ -15,13 +15,23 @@ public class PhonePreciseReceiver extends Thread {
 	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 101;
 	
 	private PreciseCallEventsHandler mHandler;
+	private Context context;
+	
+	public PhonePreciseReceiver(Context c) {
+		 mHandler = null;
+		 context = c;
+	}
 	
 	public void run() {
-        Looper.prepare();
-
+		Looper.prepare();
         mHandler = new PreciseCallEventsHandler();
+        registerForDetailedCallEvents2(context);
         Looper.loop();
     }
+	
+	public void stopLooper() {
+		Looper.myLooper().quit();
+	}
 	
     /**
      * Handler of incoming messages from clients.
@@ -41,7 +51,7 @@ public class PhonePreciseReceiver extends Thread {
     }
     
     
-	private void registerForDetailedCallEvents2(Context context) {
+	public void registerForDetailedCallEvents2(Context context) {
 		final String METHOD = "registerForDetailedCallEvents";
 		try {
 			Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");

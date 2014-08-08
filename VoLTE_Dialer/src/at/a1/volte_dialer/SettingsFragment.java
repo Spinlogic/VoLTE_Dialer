@@ -101,7 +101,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if(key.equals(VD_Settings.PREF_MSIDN)) {
-        	Globals.msisdn = sharedPreferences.getString(key, "");
+        	Globals.msisdn = sharedPreferences.getString(key, Globals.DEF_MSISDN);
         	MsisdnETPref.setSummary(MsisdnETPref.getText());
         } else if(key.equals(VD_Settings.PREF_RECEIVER)) {
         	Globals.is_receiver = sharedPreferences.getBoolean(key, false);

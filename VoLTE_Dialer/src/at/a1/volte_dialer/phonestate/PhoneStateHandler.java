@@ -29,6 +29,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
+import at.a1.volte_dialer.phonestate.PhonePreciseReceiver.PreciseCallEventsHandler;
 
 /**
  * This class implements a handler for the PhoneStateService
@@ -39,11 +40,17 @@ import at.a1.volte_dialer.Globals;
 public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
 	
-	private PhoneStateReceiver stateListener;
+	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 101;
+	
+	private PhoneStateReceiver mPhoneStateReceiver;
+//	private PhonePreciseReceiver mPhonePreciseReceiver;
+	private PreciseCallEventsHandler mHandler;
 	
 	
 	public PhoneStateHandler(Context context) {
-		stateListener 	= new PhoneStateReceiver(context);
+		mPhoneStateReceiver = new PhoneStateReceiver(context);
+//		mPhonePreciseReceiver = new PhonePreciseReceiver(context);
+		mHandler = new PreciseCallEventsHandler(); 
 	}
 	
 	public void start(Context context) {
@@ -54,15 +61,20 @@ public class PhoneStateHandler {
 		if(!Globals.is_receiver) {
 			flags = flags | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | PhoneStateListener.LISTEN_SERVICE_STATE;
 		}
-	    telMng.listen(stateListener, flags);
+	    telMng.listen(mPhoneStateReceiver, flags);
+//	    mPhonePreciseReceiver.start();
 	}
 	
 	public void stop(Context context) {
-		unregisterForDetailedCallEvents();
+//		unregisterForDetailedCallEvents();
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		telMng.listen(stateListener, PhoneStateListener.LISTEN_NONE);
+		telMng.listen(mPhoneStateReceiver, PhoneStateListener.LISTEN_NONE);
+//		mPhonePreciseReceiver.stopLooper();
+//		mPhonePreciseReceiver = null;
 	}
+
 	
+	/*
 	private void registerForDetailedCallEvents() {
 		final String METHOD = "registerForDetailedCallEvents";
 		try {
@@ -134,5 +146,62 @@ public class PhoneStateHandler {
 		}
 	
 	}
-
+*/
+	
+    /**
+     * Handler of incoming messages from clients.
+     */
+    static class PreciseCallEventsHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+        	final String METHOD = "PreciseCallEventsHandler::handleMessage()  ";
+        	Log.d(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
+            switch (msg.what) {
+                case EVENT_PRECISE_CALL_STATE_CHANGED:
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+    
+    
+	public void registerForDetailedCallEvents2(Context context) {
+		final String METHOD = "registerForDetailedCallEvents";
+		try {
+			Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
+			Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
+			mMakeDefaultPhone.invoke(null, context);			
+			Log.d(TAG + METHOD, "DEBUG makeDefaultPhone() completed");
+			Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", (Class[]) null);
+			Object mPhone = mGetDefaultPhone.invoke(null);
+			Log.d(TAG + METHOD, "DEBUG Got default phone");
+			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
+														new Class[]{Handler.class, Integer.TYPE, Object.class});            
+			mHandler = new PreciseCallEventsHandler();
+			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
+			Log.d(TAG + METHOD, "DEBUG registered to receive precise");
+		} 
+		catch (ClassNotFoundException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    }
+	    catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } 
+		catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+		catch (Exception e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
 }
