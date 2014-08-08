@@ -3,7 +3,7 @@
 	<EditTextPreference
 	    android:key="pref_key_mt_msisdn"
 	    android:title="@string/pref_mt_msisdn"
-	    android:defaultValue="066466618" />
+	    android:defaultValue="" />
 	<CheckBoxPreference
 	    android:key="pref_key_receiver"
 	    android:title="@string/pref_receiver"

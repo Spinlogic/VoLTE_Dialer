@@ -133,4 +133,12 @@ public class DialerHandler {
 		return calldescription.getState();
 	}
 	
+	public static void setAlertingTime() {
+		calldescription.setAlertingTime();
+	}
+	
+	public static void setActiveTime() {
+		calldescription.setActiveTime();
+	}
+	
 }

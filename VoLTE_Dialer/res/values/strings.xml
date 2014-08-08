@@ -9,9 +9,9 @@
        
     <!--  SETTINGS -->
     <string name="pref_mt_msisdn">MSISDN / URI to call to: </string>
-    <string name="pref_receiver">Receiver mode </string>
-    <string name="pref_mt_role">Configured to terminate calls</string>
-    <string name="pref_mo_role">Configured to originate calls</string>
+    <string name="pref_receiver">Mode</string>
+    <string name="pref_mt_role">Receiver (answers calls)</string>
+    <string name="pref_mo_role">Sender (sets up calls)</string>
     <string name="pref_callduration">Call duration: </string>
     <string name="pref_duration_20s">20 s</string>
     <string name="pref_duration_60s">1 m</string>

@@ -145,7 +145,7 @@ public class VDMainActivity extends Activity {
 	
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
-		String addr = VD_Settings.getStringPref(this, VD_Settings.PREF_SENDLOGSURL, "");
+		String addr = VD_Settings.getStringPref(this, VD_Settings.PREF_SENDLOGSURL, Globals.DEF_EMAIL);
 		String logpath = Environment.getExternalStorageDirectory() + 
 						 File.separator + Globals.FN_VDDIR + 
 						 File.separator + Globals.FN_VDLOG;

@@ -28,7 +28,6 @@ import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
-import android.text.TextUtils;
 import android.widget.Toast;
 import at.a1.volte_dialer.dialer.DialerService;
 import at.a1.volte_dialer.receiver.ReceiverService;
@@ -131,7 +130,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         	Globals.timebetweencalls = Integer.parseInt(sharedPreferences.getString(key, "20"));
         	WaitTimeListPref.setSummary(WaitTimeListPref.getEntry());
         } else if(key.equals(VD_Settings.PREF_SENDLOGSURL)) {
-        	String sendlogsum = sharedPreferences.getString(key, "");
+        	String sendlogsum = sharedPreferences.getString(key, Globals.DEF_EMAIL);
         	if(!sendlogsum.isEmpty()) {
         		if(isValidUrl(sendlogsum)) {
         			SendLogsETPref.setSummary(sendlogsum);

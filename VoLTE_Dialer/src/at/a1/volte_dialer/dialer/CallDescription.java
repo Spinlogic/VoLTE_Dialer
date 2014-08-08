@@ -55,6 +55,8 @@ public class CallDescription {
 	
 	private Context context;
 	private long	starttime;
+	private long	alertingtime;		// 18X received
+	private long	activetime;		// 200 received
 	private long	endtime;
 	private int     disconnectionside;  // 0 -> UE, 1 -> NW
 	private int		state;				// call state in TelephonyManager
@@ -71,6 +73,8 @@ public class CallDescription {
 	public CallDescription(Context c) {
 		context 			= c;
 		starttime			= System.currentTimeMillis();
+		alertingtime		= 0;
+		activetime			= 0;
 		endtime				= 0;
 		disconnectionside	= 0;
 		state 				= TelephonyManager.CALL_STATE_IDLE;
@@ -98,8 +102,13 @@ public class CallDescription {
 	 * Writes a log entry for the call in the log file.
 	 */
 	public void writeCallInfoToLog() {
-		String logline = Long.toString((endtime - starttime) / 1000) + "," + 
-						 Integer.toString(disconnectionside) + "," + 
+		long duration 			= (endtime - starttime) / 1000;
+		long callalertedtime 	= (alertingtime - starttime) / 1000;
+		long callconnectedtime	= (activetime - starttime) / 1000;
+		String logline = Long.toString(duration) 				+ "," + 
+						 Long.toString(callalertedtime)			+ "," +
+						 Long.toString(callconnectedtime) 		+ "," +
+						 Integer.toString(disconnectionside) 	+ "," +
 						 startcellinfo + "," + Integer.toString(startsignalstrength) + 
 						 "," + endcellinfo + "," + Integer.toString(endsignalstrength);
 		VD_Logger.appendLog(logline);
@@ -115,6 +124,14 @@ public class CallDescription {
 	
 	public int getDisconnectionSide(){
 		return disconnectionside;
+	}
+	
+	public void setAlertingTime() {
+		alertingtime = System.currentTimeMillis();
+	}
+	
+	public void setActiveTime() {
+		activetime = System.currentTimeMillis();
 	}
 	
 	// PRIVATE METHODS

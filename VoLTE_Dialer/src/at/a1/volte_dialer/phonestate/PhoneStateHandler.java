@@ -29,10 +29,13 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
-import at.a1.volte_dialer.phonestate.PhonePreciseReceiver.PreciseCallEventsHandler;
 
 /**
  * This class implements a handler for the PhoneStateService
+ * Two receiver classes are used. One [PhoneStateReceiver] to listen 
+ * for standard call, signal and service states, and the other
+ * [PreciseCallStateReceiver] to listen for precise states. This second
+ * one works only on rooted devices.
  * 
  * @author Juan Noguera
  *
@@ -40,21 +43,17 @@ import at.a1.volte_dialer.phonestate.PhonePreciseReceiver.PreciseCallEventsHandl
 public class PhoneStateHandler {
 	private static final String TAG = "PhoneStateHandler";
 	
-	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 101;
-	
 	private PhoneStateReceiver mPhoneStateReceiver;
-//	private PhonePreciseReceiver mPhonePreciseReceiver;
-	private PreciseCallEventsHandler mHandler;
-	
+	private PreciseCallStateReceiver mPreciseCallStateReceiver;
 	
 	public PhoneStateHandler(Context context) {
-		mPhoneStateReceiver = new PhoneStateReceiver(context);
-//		mPhonePreciseReceiver = new PhonePreciseReceiver(context);
-		mHandler = new PreciseCallEventsHandler(); 
+		mPhoneStateReceiver 		= new PhoneStateReceiver(context);
+		mPreciseCallStateReceiver 	= new PreciseCallStateReceiver(context);
 	}
 	
 	public void start(Context context) {
-		registerForDetailedCallEvents2(context);
+		final String METHOD = "::start()  ";
+		Log.d(TAG + METHOD, " Starting Phone state receivers.");
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		int flags = PhoneStateListener.LISTEN_CALL_STATE;
@@ -62,15 +61,16 @@ public class PhoneStateHandler {
 			flags = flags | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | PhoneStateListener.LISTEN_SERVICE_STATE;
 		}
 	    telMng.listen(mPhoneStateReceiver, flags);
-//	    mPhonePreciseReceiver.start();
+	    mPreciseCallStateReceiver.listen();
+	    Log.d(TAG + METHOD, " Phone state receivers started.");
 	}
 	
 	public void stop(Context context) {
-//		unregisterForDetailedCallEvents();
+		final String METHOD = "::stop()  ";
+		mPreciseCallStateReceiver.stop();
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(mPhoneStateReceiver, PhoneStateListener.LISTEN_NONE);
-//		mPhonePreciseReceiver.stopLooper();
-//		mPhonePreciseReceiver = null;
+		Log.d(TAG + METHOD, " Phone state receivers stopped.");
 	}
 
 	
@@ -148,60 +148,4 @@ public class PhoneStateHandler {
 	}
 */
 	
-    /**
-     * Handler of incoming messages from clients.
-     */
-    static class PreciseCallEventsHandler extends Handler {
-        @Override
-        public void handleMessage(Message msg) {
-        	final String METHOD = "PreciseCallEventsHandler::handleMessage()  ";
-        	Log.d(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
-            switch (msg.what) {
-                case EVENT_PRECISE_CALL_STATE_CHANGED:
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
-    
-    
-	public void registerForDetailedCallEvents2(Context context) {
-		final String METHOD = "registerForDetailedCallEvents";
-		try {
-			Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
-			Method mMakeDefaultPhone = mPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
-			mMakeDefaultPhone.invoke(null, context);			
-			Log.d(TAG + METHOD, "DEBUG makeDefaultPhone() completed");
-			Method mGetDefaultPhone = mPhoneFactory.getMethod("getDefaultPhone", (Class[]) null);
-			Object mPhone = mGetDefaultPhone.invoke(null);
-			Log.d(TAG + METHOD, "DEBUG Got default phone");
-			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
-														new Class[]{Handler.class, Integer.TYPE, Object.class});            
-			mHandler = new PreciseCallEventsHandler();
-			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
-			Log.d(TAG + METHOD, "DEBUG registered to receive precise");
-		} 
-		catch (ClassNotFoundException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (NoSuchMethodException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (InvocationTargetException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (IllegalAccessException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (SecurityException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (IllegalArgumentException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-		catch (Exception e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-	}
 }

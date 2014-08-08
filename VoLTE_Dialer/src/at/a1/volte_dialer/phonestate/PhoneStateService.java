@@ -50,18 +50,18 @@ public class PhoneStateService extends Service {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		final String METHOD = "::onStartCommand()  ";
 		phoneStateHandler = new PhoneStateHandler(this);
-		int res = super.onStartCommand(intent, flags, startId);
 		phoneStateHandler.start(this);
 		Log.d(TAG + METHOD, "service started");
+		int res = super.onStartCommand(intent, flags, startId);
 		return res;
 	}
 		
 	@Override
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
-		super.onDestroy();
 		phoneStateHandler.stop(this);
 		Log.d(TAG + METHOD, "service destroyed");
+		super.onDestroy();
 	}
 
 	@Override
