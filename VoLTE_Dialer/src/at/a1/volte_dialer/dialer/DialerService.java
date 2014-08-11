@@ -26,6 +26,7 @@ import android.os.IBinder;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.phonestate.PhoneStateService;
+import at.a1.volte_dialer.phonestate.PreciseCallStateReceiver;
 
 /**
  * This service is used to start and stop the dialer.
@@ -62,9 +63,13 @@ public class DialerService extends Service {
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
 		final Context context = getApplicationContext();
-		super.onDestroy();
 		if(DialerHandler.isCallOngoing()) {
-			Globals.hangupCall(); // Disconnect any call that is still ongoing
+			if(Globals.is_running_as_system) {
+				PreciseCallStateReceiver.hangupCall();
+			}
+			else {
+				Globals.hangupCall(); // Disconnect any call that is still ongoing
+			}
 		}
 		// Give some time to log the last call. In case there was one ongoing
 		Handler h = new Handler();
@@ -78,6 +83,7 @@ public class DialerService extends Service {
 				Log.d(TAG + METHOD, "service destroyed");
 			}
 		}, 1000);
+		super.onDestroy();
 	}
 
 	@Override

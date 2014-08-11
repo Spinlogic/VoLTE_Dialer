@@ -65,16 +65,17 @@ public class PhoneStateReceiver extends PhoneStateListener {
 					// Stop pending alarms to terminate the call from UE side.
 					DialerHandler.stop(context);
 					DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_NW);
-					DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
-					if(Globals.mainactivity != null) {
-						Globals.mainactivity.startNextCallTimer();
+					if(Globals.is_vd_running) {
+						DialerHandler.setAlarm(context, Globals.timebetweencalls);	//	Set timer for next call
+						if(Globals.mainactivity != null) {
+							Globals.mainactivity.startNextCallTimer();
+						}
 					}
 				}
 				Globals.is_mtc_ongoing = false;
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
 				if(Globals.is_receiver) {
-					boolean autoanswer = false;
 					if(incomingNumber != null && !incomingNumber.isEmpty()) {
 						// right match of the last n - 2 digits
 						String numbertomatch = incomingNumber.substring(2);

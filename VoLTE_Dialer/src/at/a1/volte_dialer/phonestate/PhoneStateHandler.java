@@ -48,7 +48,9 @@ public class PhoneStateHandler {
 	
 	public PhoneStateHandler(Context context) {
 		mPhoneStateReceiver 		= new PhoneStateReceiver(context);
-		mPreciseCallStateReceiver 	= new PreciseCallStateReceiver(context);
+		mPreciseCallStateReceiver 	= (Globals.is_running_as_system) ? 
+									  new PreciseCallStateReceiver(context) : 
+									  null;
 	}
 	
 	public void start(Context context) {
@@ -56,96 +58,25 @@ public class PhoneStateHandler {
 		Log.d(TAG + METHOD, " Starting Phone state receivers.");
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		int flags = PhoneStateListener.LISTEN_CALL_STATE;
+		int flags = (Globals.is_running_as_system && !Globals.is_receiver) ? 0 : PhoneStateListener.LISTEN_CALL_STATE;
 		if(!Globals.is_receiver) {
 			flags = flags | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | PhoneStateListener.LISTEN_SERVICE_STATE;
 		}
 	    telMng.listen(mPhoneStateReceiver, flags);
-	    mPreciseCallStateReceiver.listen();
+	    if(Globals.is_running_as_system) {	// this receiver is only needed for MO calls
+	    	mPreciseCallStateReceiver.listen();
+	    }
 	    Log.d(TAG + METHOD, " Phone state receivers started.");
 	}
 	
 	public void stop(Context context) {
 		final String METHOD = "::stop()  ";
-		mPreciseCallStateReceiver.stop();
+		if(Globals.is_running_as_system) {
+			mPreciseCallStateReceiver.stop();
+		}
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(mPhoneStateReceiver, PhoneStateListener.LISTEN_NONE);
 		Log.d(TAG + METHOD, " Phone state receivers stopped.");
 	}
-
-	
-	/*
-	private void registerForDetailedCallEvents() {
-		final String METHOD = "registerForDetailedCallEvents";
-		try {
-			final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
-			Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
-			Method methodRegisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("registerForPreciseCallStateChanged",
-																new Class[]{Handler.class, Integer.TYPE, Object.class});
-//			methodGetInstance.setAccessible(true);
-			Object mCallManager = methodGetInstance.invoke(null);
-			
-//			mHandler = new PreciseCallEventsHandler();
-//			Field pcsc = classCallManager.getDeclaredField("EVENT_PRECISE_CALL_STATE_CHANGED");
-//			pcsc.setAccessible(true);
-//			methodRegisterForPreciseCallStateChanged.invoke(mCallManager, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
-		} 
-		catch (ClassNotFoundException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (NoSuchMethodException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (InvocationTargetException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (IllegalAccessException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (SecurityException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (IllegalArgumentException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-		catch (Exception e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-	}
-	
-	private void unregisterForDetailedCallEvents() {
-		final String METHOD = "unregisterForDetailedCallEvents";
-		try {
-			final Class<?> classCallManager = Class.forName("com.android.internal.telephony.CallManager");
-			Method methodGetInstance = classCallManager.getDeclaredMethod("getInstance");
-			Method methodUnregisterForPreciseCallStateChanged = classCallManager.getDeclaredMethod("unregisterForPreciseCallStateChanged",
-																new Class[]{Handler.class});
-			Object mCallManager = methodGetInstance.invoke(null);
-//			methodUnregisterForPreciseCallStateChanged.invoke(mCallManager, mHandler);
-		} 
-		catch (ClassNotFoundException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (NoSuchMethodException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (InvocationTargetException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    }
-	    catch (IllegalAccessException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (SecurityException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } 
-		catch (IllegalArgumentException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-		catch (Exception e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-		}
-	
-	}
-*/
 	
 }

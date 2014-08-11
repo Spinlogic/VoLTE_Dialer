@@ -64,6 +64,7 @@ public class VDMainActivity extends Activity {
 		}
 		
 		Globals.mainactivity = this;
+		Globals.is_running_as_system = isAppRunningAsSystem();
 	}
 	
 	@Override
@@ -90,13 +91,6 @@ public class VDMainActivity extends Activity {
 	@Override
 	public void onStart() {
 		super.onStart();
-		
-		int sdk_int = Build.VERSION.SDK_INT;
-		String sdk 	= Build.VERSION.SDK;
-		String cn 	= Build.VERSION.CODENAME;
-		String rel	= Build.VERSION.RELEASE;
-		String inc	= Build.VERSION.INCREMENTAL;
-		int count = 0;
 	}
 	
 	@Override
@@ -214,6 +208,16 @@ public class VDMainActivity extends Activity {
 		String btn_text = "";
 		if(Globals.is_vd_running) {
 			Globals.is_vd_running = false;
+			//	The stop process is as follows:
+			//	1. DialService is stopped.
+			//	2a. DialService hangs up the current call, if any.
+			//	2b. DialService stops PhoneStateService.
+			//	2c. DialService stops DialHandler.
+			//	3. DialHandler stop() removes the alarm to trigger new call.
+			//	4. PhoneStateService stops PhoneStateHandler.
+			//	5a. PhoneStateHandler stops PhoneStateReceiver.
+			//	5b. If the app is running in system space, then PhoneStateHandler
+			//      stops PreciseCallStateReceiver.
 			Globals.icallnumber	= 0;
 			stopNextCallTimer();
 			Intent intent = new Intent(this, DialerService.class);
@@ -350,6 +354,20 @@ public class VDMainActivity extends Activity {
 	    	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
 	    	tv_counter.setText(""); 	// empty the text
     	}
+    }
+    
+    /**
+     * Determines whether the app is running in system or user space
+     * 
+     * @return	true	App is running in system space
+     * 			false	App is running in user space
+     */
+    private boolean isAppRunningAsSystem() {
+    	int uid_radio = android.os.Process.getUidForName("radio");
+    	int uid_system = android.os.Process.getUidForName("system");
+    	int uid_root = android.os.Process.getUidForName("root");
+    	int myuid = android.os.Process.myUid();
+    	return (myuid == uid_radio || myuid == uid_system || myuid == uid_root) ? true : false;
     }
 
 }

@@ -30,7 +30,7 @@ public class DialerReceiver extends BroadcastReceiver  {
     @Override
     public void onReceive(final Context context, Intent intent) {
     	final String METHOD = ":onReceive()  ";
-    	
+
     	if(DialerHandler.isCallOngoing()) {
     		Log.d(TAG + METHOD, "Terminate call.");
     		DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
@@ -43,7 +43,7 @@ public class DialerReceiver extends BroadcastReceiver  {
     		Log.d(TAG + METHOD, "Trigger new call.");
     		DialerHandler.dialCall(context, Globals.msisdn);
     		if(Globals.mainactivity != null) {
-    			Globals.mainactivity.stopNextCallTimer();
+   			Globals.mainactivity.stopNextCallTimer();
     		}
     	}
     }

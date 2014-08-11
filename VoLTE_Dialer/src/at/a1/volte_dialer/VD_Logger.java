@@ -31,6 +31,8 @@ import android.util.Log;
 public class VD_Logger {
 	final static String TAG = "VD_Logger";
 	
+	public static final String CSV_CHAR	= ",";	// character to separate entries in log
+	
 	private static File logFile;
 	
 	/**
@@ -59,7 +61,12 @@ public class VD_Logger {
 		if (!logFile.exists()) {
 			try {
 				if(logFile.createNewFile()) {
-				Log.d(TAG + METHOD, "appendLog: Creating new logfile");
+					// Write the header. Must correspond with logged fields in 
+					// at.a1.volte_dialer_dialer.CallDescription
+					String logline = "DATE,TIME,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
+									 "DISCONNECT CAUSE,START CID,START SIGNAL,END CID,END SIGNAL,SRVCC";
+					insertLine(logline);
+					Log.d(TAG + METHOD, "appendLog: Creating new logfile");
 				}
 			}
 			catch (IOException e) {
@@ -71,11 +78,7 @@ public class VD_Logger {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd,HH:mm:ss");
 			String currentDateandTime = sdf.format(new Date());
 			String logline = currentDateandTime + "," + text;
-			//BufferedWriter for performance, true to set append to file flag
-			BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true)); 
-			buf.append(logline);
-			buf.newLine();
-			buf.close();
+			insertLine(logline);
 		}
 		catch (IOException e) {
 			Log.d(TAG, METHOD + e.getMessage());
@@ -84,5 +87,12 @@ public class VD_Logger {
 	
 	public static void deleteLog() {
 		logFile.delete();
+	}
+	
+	private static void insertLine(String logline) throws IOException {
+		BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true)); 
+		buf.append(logline);
+		buf.newLine();
+		buf.close();
 	}
 }

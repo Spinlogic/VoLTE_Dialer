@@ -43,11 +43,11 @@ public class CallDescription {
 	
 	private final String TAG = "CallDescription";
 	
-	public static final String ACCESS_UNKNOWN	= "Unknown";
-	public static final String ACCESS_LTE		= "LTE";
-	public static final String ACCESS_WCDMA		= "WCDMA";
-	public static final String ACCESS_GSM		= "GSM";
-	public static final String ACCESS_CDMA		= "CDMA";
+	private static final String ACCESS_UNKNOWN	= "Unknown";
+	private static final String ACCESS_LTE		= "LTE";
+	private static final String ACCESS_WCDMA	= "WCDMA";
+	private static final String ACCESS_GSM		= "GSM";
+	private static final String ACCESS_CDMA		= "CDMA";
 	
 	// Call disconnection options
 	public static final int CALL_DISCONNECTED_BY_UE = 0;
@@ -56,9 +56,10 @@ public class CallDescription {
 	private Context context;
 	private long	starttime;
 	private long	alertingtime;		// 18X received
-	private long	activetime;		// 200 received
+	private long	activetime;			// 200 received
 	private long	endtime;
 	private int     disconnectionside;  // 0 -> UE, 1 -> NW
+	private String	disconnectioncause; // refer to DisconnectCause in com.android.internal.telephony.Connection
 	private int		state;				// call state in TelephonyManager
 	private String	startcellinfo;
 	private String	endcellinfo;
@@ -77,6 +78,7 @@ public class CallDescription {
 		activetime			= 0;
 		endtime				= 0;
 		disconnectionside	= 0;
+		disconnectioncause	= "UNKNOWN";
 		state 				= TelephonyManager.CALL_STATE_IDLE;
 		startcellinfo		= getCurrentCellId();
 		endcellinfo 		= "";
@@ -102,15 +104,24 @@ public class CallDescription {
 	 * Writes a log entry for the call in the log file.
 	 */
 	public void writeCallInfoToLog() {
-		long duration 			= (endtime - starttime) / 1000;
-		long callalertedtime 	= (alertingtime - starttime) / 1000;
-		long callconnectedtime	= (activetime - starttime) / 1000;
-		String logline = Long.toString(duration) 				+ "," + 
-						 Long.toString(callalertedtime)			+ "," +
-						 Long.toString(callconnectedtime) 		+ "," +
-						 Integer.toString(disconnectionside) 	+ "," +
-						 startcellinfo + "," + Integer.toString(startsignalstrength) + 
-						 "," + endcellinfo + "," + Integer.toString(endsignalstrength);
+		long duration 			= (activetime > 0) ? 
+								  ((endtime - activetime) / 1000) : 
+								  ((endtime - starttime) / 1000);
+		long callalertedtime 	= (alertingtime > 0) ? 
+								  ((alertingtime - starttime) / 1000) : 
+								  0;
+		long callconnectedtime	= (activetime > 0) ? 
+								  ((activetime - starttime) / 1000) : 
+								  0;
+		String logline = Long.toString(duration) 				+ VD_Logger.CSV_CHAR +
+						 Long.toString(callalertedtime)			+ VD_Logger.CSV_CHAR +
+						 Long.toString(callconnectedtime) 		+ VD_Logger.CSV_CHAR +
+						 Integer.toString(disconnectionside) 	+ VD_Logger.CSV_CHAR +
+						 disconnectioncause						+ VD_Logger.CSV_CHAR +
+						 startcellinfo 							+ VD_Logger.CSV_CHAR +
+						 Integer.toString(startsignalstrength)	+ VD_Logger.CSV_CHAR +
+						 endcellinfo							+ VD_Logger.CSV_CHAR +
+						 Integer.toString(endsignalstrength);
 		VD_Logger.appendLog(logline);
 	}
 	
@@ -132,6 +143,14 @@ public class CallDescription {
 	
 	public void setActiveTime() {
 		activetime = System.currentTimeMillis();
+	}
+	
+	public void setDisconnectionCause(String cause) {
+		disconnectioncause = cause;
+	}
+	
+	public boolean isDisconnectionCauseKnown() {
+		return (disconnectioncause != "UNKNOWN");
 	}
 	
 	// PRIVATE METHODS
@@ -205,7 +224,8 @@ public class CallDescription {
 		}
 		else {
 			// Most likely getAllCellInfo() has an empty implementation in this UE
-			// We can still get some cell info for non-LTE cells
+			// We can still get the cell info, but we do not know which radio (LTE, WCDMA, GSM, CDMA)
+			// TODO: obtain cell info via reflection using mPhone in PreciseCallEventsHandler
 		    CellLocation cl = tm.getCellLocation();
 		    GsmCellLocation gsmLoc;
 	        CdmaCellLocation cdmaLoc;

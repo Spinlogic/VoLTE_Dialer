@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.telephony.ServiceState;
 import android.util.Log;
 import at.a1.volte_dialer.Globals;
+import at.a1.volte_dialer.phonestate.PreciseCallStateReceiver;
 
 /**
  * This class is used to set the 
@@ -68,10 +69,26 @@ public class DialerHandler {
 		// The call may have been terminated by the PhoneStateReceiver
 		calldescription.endCall(side);
 		if(side == CallDescription.CALL_DISCONNECTED_BY_UE) {
-			Globals.hangupCall();
+			if(Globals.is_running_as_system) {	// Globals.hangupCall() does not work in this case
+				PreciseCallStateReceiver.hangupCall();
+				// Delay the logging for 1 second to give time to
+				// PreciseCallStateReceiver to get the disconnect cause
+				Handler h = new Handler();
+				h.postDelayed(new Runnable() {
+					public void run() {
+						calldescription.writeCallInfoToLog();
+						calldescription = null;
+					}
+				}, 1000);
+			}
+			else {	
+				Globals.hangupCall();
+				// in user space, we do no get disconnect cause
+				calldescription.writeCallInfoToLog();
+				calldescription = null;
+			}
 		}
-		calldescription.writeCallInfoToLog();
-		calldescription = null;	// let GC clean up the object
+		
 	}
 	
 	public static boolean isCallOngoing() {
@@ -86,16 +103,21 @@ public class DialerHandler {
 			Handler h = new Handler();
 			h.postDelayed(new Runnable() {
 				public void run() {
+					DialerHandler.calldescription = new CallDescription(c);
 					Intent intent = new Intent(Intent.ACTION_CALL);
 					intent.setData(Uri.parse("tel:" + msisdn));
 					intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
 					c.startActivity(intent);
 					Globals.icallnumber++;	// increment call counter
-					Log.d(TAG + METHOD, "Making call to number: " + msisdn);
-					DialerHandler.calldescription = new CallDescription(c);
+					Log.d(TAG + METHOD, "Calling " + msisdn);
 					
 					// Activate an alarm to end the call
-					setAlarm(c, Globals.average_call_setup_time + Globals.callduration);	// TODO: the alarm should be set when the call is established
+					if(Globals.is_running_as_system) {
+						setAlarm(c, Globals.max_call_setup_time);
+					}
+					else {
+						setAlarm(c, Globals.average_call_setup_time + Globals.callduration);	// TODO: the alarm should be set when the call is established
+					}
 				}
 			}, 500);	// Works better if the call is trigger after some delay
 		}
@@ -141,4 +163,11 @@ public class DialerHandler {
 		calldescription.setActiveTime();
 	}
 	
+	public static void setDisconnectionCause(String cause) {
+		calldescription.setDisconnectionCause(cause);
+	}
+	
+	public static boolean isDisconnectionCauseKnown() {
+		return calldescription.isDisconnectionCauseKnown();
+	}
 }

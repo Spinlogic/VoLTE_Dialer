@@ -37,8 +37,9 @@ public class volte_dialer extends Application {
         // Init the logger
         VD_Logger.initializeValues();
 		// Initialize global variables 
-        Globals.is_vd_running 		= false;
-        Globals.is_receiver_running = false;
+        Globals.is_running_as_system 	= false;
+        Globals.is_vd_running 			= false;
+        Globals.is_receiver_running 	= false;
         Globals.msisdn 			= VD_Settings.getStringPref(
 						        				this,
 						        				VD_Settings.PREF_MSIDN,

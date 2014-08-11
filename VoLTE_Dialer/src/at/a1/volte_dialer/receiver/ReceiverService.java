@@ -61,7 +61,7 @@ public class ReceiverService extends Service {
 		super.onDestroy();
 		// Disconnect any ongoing call
 		if(Globals.is_mtc_ongoing == true) {
-			Globals.hangupCall();
+			Globals.hangupCall();	// No need to check whether it is in system space.
 			Globals.is_mtc_ongoing = false;
 		}
 		Intent psintent = new Intent(context, PhoneStateService.class);
