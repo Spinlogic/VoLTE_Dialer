@@ -42,8 +42,8 @@ public class Globals {
 	public static final String FN_VDDIR 	= "volte_dialer";		// This is the directory in the external 
 																	//	storage where reports are stored
 	public static final String FN_VDLOG 	= "vdlog.txt";			// Log file
-	public static final String DEF_MSISDN 	= "";					// Default test number where to call to
-	public static final String DEF_EMAIL 	= "";	
+	public static final String DEF_MSISDN 	= "066466618";					// Default test number where to call to
+	public static final String DEF_EMAIL 	= "juan.noguera@a1telekom.at";	
 	public static final int average_call_setup_time = 10;			// Average call setup time to test number in seconds
 	public static final int max_call_setup_time = 60;				// Maximum call setup time. Only used when running is system space.
 	// ---- End constants ----
@@ -51,6 +51,7 @@ public class Globals {
 	
 	// ---- Variables ----
 	public static boolean	is_running_as_system;	// is the app running as system process?
+	public static boolean	is_bgmode;				// is configured to listen in background?
 	public static boolean	is_receiver;			// is the app configured for MO or MT. Receiver = MT.
 	public static boolean	is_receiver_running;	// indicates if the receiver service is running
 	public static boolean	is_mtc_ongoing;			// indicates if there is a MT call ongoing
@@ -147,6 +148,21 @@ public class Globals {
     	} catch(Exception e) {
     		Log.d(TAG + METHOD, "Exception: " + e);
     	}
+    }
+    
+    
+    /**
+     * Determines whether the app is running in system or user space
+     * 
+     * @return	true	App is running in system space
+     * 			false	App is running in user space
+     */
+    public static boolean isAppRunningAsSystem() {
+    	int uid_radio = android.os.Process.getUidForName("radio");
+    	int uid_system = android.os.Process.getUidForName("system");
+    	int uid_root = android.os.Process.getUidForName("root");
+    	int myuid = android.os.Process.myUid();
+    	return (myuid == uid_radio || myuid == uid_system || myuid == uid_root) ? true : false;
     }
     
 }

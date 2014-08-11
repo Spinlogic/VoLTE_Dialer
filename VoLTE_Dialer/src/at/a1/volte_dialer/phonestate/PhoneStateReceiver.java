@@ -27,9 +27,9 @@ import android.telephony.SignalStrength;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
+import at.a1.volte_dialer.CallDescription;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.VDMainActivity;
-import at.a1.volte_dialer.dialer.CallDescription;
 import at.a1.volte_dialer.dialer.DialerHandler;
 
 /**

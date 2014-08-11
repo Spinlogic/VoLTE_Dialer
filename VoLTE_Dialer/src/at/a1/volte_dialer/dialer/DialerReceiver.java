@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import at.a1.volte_dialer.CallDescription;
 import at.a1.volte_dialer.Globals;
 
 public class DialerReceiver extends BroadcastReceiver  {

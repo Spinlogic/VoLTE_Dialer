@@ -32,6 +32,7 @@ public class VD_Settings {
 	public static final String PREF_WAIT_TIME		= "pref_key_time_between_calls";
 	public static final String PREF_SENDLOGSURL		= "pref_key_sendlogsurl";
 	public static final String PREF_DELETELOG		= "pref_key_deletelogfile";
+	public static final String PREF_BGMODE			= "pref_key_bgmode";
 
 	public static String getStringPref(Context c, String prefname, String defvalue) {
 		String result = defvalue;

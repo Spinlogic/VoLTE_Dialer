@@ -28,6 +28,7 @@
     <string name="pref_sendurl">Email address or URL to send logs: </string>
     <string name="pref_invalidurl">Invalid format.\nMust be email or URL.</string>
     <string name="pref_deletelogfile">Delete log after sending it</string>
+    <string name="pref_bgmode">Background loging</string>
     
     <!--  MAIN ACTIVITY -->
     <string name="str_role">Role:</string>

@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package at.a1.volte_dialer.dialer;
+package at.a1.volte_dialer;
 
 import java.util.List;
 
@@ -35,8 +35,6 @@ import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
-import at.a1.volte_dialer.Globals;
-import at.a1.volte_dialer.VD_Logger;
 import at.a1.volte_dialer.phonestate.PhoneStateReceiver;
 
 public class CallDescription {

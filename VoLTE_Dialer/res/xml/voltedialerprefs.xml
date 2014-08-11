@@ -3,11 +3,13 @@
 	<EditTextPreference
 	    android:key="pref_key_mt_msisdn"
 	    android:title="@string/pref_mt_msisdn"
-	    android:defaultValue="" />
+	    android:defaultValue="066466618" 
+	    android:dependency="pref_key_bgmode" />
 	<CheckBoxPreference
 	    android:key="pref_key_receiver"
 	    android:title="@string/pref_receiver"
 	    android:defaultValue="false"
+	    android:dependency="pref_key_bgmode"
 	    android:disableDependentsState="true" />
 	<ListPreference 
 	    android:key="pref_key_call_duration"
@@ -26,9 +28,14 @@
 	<EditTextPreference
 	    android:key="pref_key_sendlogsurl"
 	    android:title="@string/pref_sendurl"
-	    android:defaultValue="" />
+	    android:defaultValue="juan.noguera@a1telekom.at" />
 	<CheckBoxPreference
 	    android:key="pref_key_deletelogfile"
 	    android:title="@string/pref_deletelogfile"
 	    android:defaultValue="true" />
+	<CheckBoxPreference
+	    android:key="pref_key_bgmode"
+	    android:title="@string/pref_bgmode"
+	    android:defaultValue="false"
+	    android:disableDependentsState="true" />
 </PreferenceScreen>

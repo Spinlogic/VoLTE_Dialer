@@ -27,6 +27,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.telephony.ServiceState;
 import android.util.Log;
+import at.a1.volte_dialer.CallDescription;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.phonestate.PreciseCallStateReceiver;
 

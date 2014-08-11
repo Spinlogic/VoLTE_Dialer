@@ -1,3 +1,21 @@
+/**
+ *  Dialer for testing VoLTE network side KPIs.
+ *  
+ *   Copyright (C) 2014  Spinlogic
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License version 2 as 
+ *  published by the Free Software Foundation.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package at.a1.volte_dialer.phonestate;
 
 import java.lang.reflect.InvocationTargetException;
@@ -7,8 +25,8 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import at.a1.volte_dialer.CallDescription;
 import at.a1.volte_dialer.Globals;
-import at.a1.volte_dialer.dialer.CallDescription;
 import at.a1.volte_dialer.dialer.DialerHandler;
 
 
@@ -26,6 +44,7 @@ public class PreciseCallStateReceiver {
 	private static final String TAG = "PreciseCallStateReceiver";
 	
 	private static final int EVENT_PRECISE_CALL_STATE_CHANGED = 101;
+	private static final int EVENT_IMS_SRVCC_HANDOVER = 140;
 	
 	private PreciseCallEventsHandler mHandler;
 	private static Object mPhone;		// Default phone instance retrieved from PhoneFactory
@@ -34,15 +53,31 @@ public class PreciseCallStateReceiver {
 	
 	public PreciseCallStateReceiver(Context c) {
 		context = c;
-		mHandler = new PreciseCallEventsHandler();
+		mHandler = new PreciseCallEventsHandler(this);
 	}
 	
 	public void listen() {
-		registerForDetailedCallEvents();
+		final String METHOD = "::listen()   ";
+		try {
+			mPhone = getPhoneInstance();
+			registerForDetailedCallEvents();
+			registerForSrvccEvent();
+		} catch (ClassNotFoundException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (NoSuchMethodException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (IllegalAccessException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (IllegalArgumentException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (InvocationTargetException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
 	}
 	
 	public void stop() {
 		unregisterForDetailedCallEvents();
+		unregisterForSrvccEvent();
 		mPhone = null;
 		context = null;
 	}
@@ -52,6 +87,12 @@ public class PreciseCallStateReceiver {
      * Handler of incoming messages from clients.
      */
 	private static class PreciseCallEventsHandler extends Handler {
+		
+		PreciseCallStateReceiver mPreciseCallStateReceiver;
+		
+		public PreciseCallEventsHandler(PreciseCallStateReceiver preciseCallStateReceiver) {
+			mPreciseCallStateReceiver = preciseCallStateReceiver;
+		}
 	   
         @Override
         public void handleMessage(Message msg) {
@@ -61,6 +102,27 @@ public class PreciseCallStateReceiver {
                 case EVENT_PRECISE_CALL_STATE_CHANGED:
                 	processPrecisseCallEvent();
                     break;
+                case EVENT_IMS_SRVCC_HANDOVER:
+                	mPreciseCallStateReceiver.unregisterForDetailedCallEvents();
+                	mPreciseCallStateReceiver.unregisterForSrvccEvent();
+                	mPhone = null;	// current mPhone is not valid anymore
+					try {
+						// Get a new phone and register for 
+						mPhone = mPreciseCallStateReceiver.getPhoneInstance();
+						mPreciseCallStateReceiver.registerForDetailedCallEvents();
+						mPreciseCallStateReceiver.registerForSrvccEvent();
+					} catch (ClassNotFoundException e) {
+						Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+					} catch (NoSuchMethodException e) {
+						Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+					} catch (IllegalAccessException e) {
+						Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+					} catch (IllegalArgumentException e) {
+						Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+					} catch (InvocationTargetException e) {
+						Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+					}
+                	break;
                 default:
                     super.handleMessage(msg);
             }
@@ -234,17 +296,14 @@ public class PreciseCallStateReceiver {
 	}
     
 	
-	public void registerForDetailedCallEvents() {
+	private void registerForDetailedCallEvents() {
 		final String METHOD = "::registerForDetailedCallEvents()   ";
 		try {
-			mPhone = getPhoneInstance();
 			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
 														new Class[]{Handler.class, Integer.TYPE, Object.class});            
 			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
 			Log.i(TAG + METHOD, "DEBUG registered to receive precise");
-		} catch (ClassNotFoundException e) {
-	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
-	    } catch (NoSuchMethodException e) {
+		} catch (NoSuchMethodException e) {
 	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
 	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
@@ -283,6 +342,61 @@ public class PreciseCallStateReceiver {
 	}
 	
 	
+	private void registerForSrvccEvent() {
+		final String METHOD = "::registerForSrvccEvent()   ";
+		try {
+			Method mRegisterForSrvcc = mPhone.getClass().getMethod("registerForSrvccHandOver",
+														new Class[]{Handler.class, Integer.TYPE, Object.class});            
+			mRegisterForSrvcc.invoke(mPhone, mHandler, EVENT_IMS_SRVCC_HANDOVER, null);
+			Log.i(TAG + METHOD, "DEBUG registered to receive precise");
+		} catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (Exception e) { // Any other exception. For debugging purposes
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
+	
+	
+	private void unregisterForSrvccEvent() {
+		final String METHOD = "::unregisterForSrvccEvent()   ";
+		
+		try {
+			Method mUnregisterForSrvcc = mPhone.getClass().getMethod("unregisterForSrvccHandOver",
+														new Class[]{Handler.class, Integer.TYPE, Object.class});            
+			mUnregisterForSrvcc.invoke(mPhone, mHandler);
+			Log.i(TAG + METHOD, "DEBUG registered to receive precise");
+		} catch (NoSuchMethodException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (InvocationTargetException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (IllegalAccessException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (SecurityException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+	    } catch (IllegalArgumentException e) {
+	        Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		} catch (Exception e) { // Any other exception. For debugging purposes
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * This method is used to retrieve the current instance of Phone 
+	 * used by the system.
+	 * 
+	 * Some changes, like SRVCC, change the instance.
+	 * 
+	 */
 	private Object getPhoneInstance() throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		final String METHOD = "::getPhoneInstance()   ";
 		Class<?> mPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");

@@ -64,7 +64,7 @@ public class VDMainActivity extends Activity {
 		}
 		
 		Globals.mainactivity = this;
-		Globals.is_running_as_system = isAppRunningAsSystem();
+		Globals.is_running_as_system = Globals.isAppRunningAsSystem();
 	}
 	
 	@Override
@@ -354,20 +354,6 @@ public class VDMainActivity extends Activity {
 	    	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
 	    	tv_counter.setText(""); 	// empty the text
     	}
-    }
-    
-    /**
-     * Determines whether the app is running in system or user space
-     * 
-     * @return	true	App is running in system space
-     * 			false	App is running in user space
-     */
-    private boolean isAppRunningAsSystem() {
-    	int uid_radio = android.os.Process.getUidForName("radio");
-    	int uid_system = android.os.Process.getUidForName("system");
-    	int uid_root = android.os.Process.getUidForName("root");
-    	int myuid = android.os.Process.myUid();
-    	return (myuid == uid_radio || myuid == uid_system || myuid == uid_root) ? true : false;
     }
 
 }

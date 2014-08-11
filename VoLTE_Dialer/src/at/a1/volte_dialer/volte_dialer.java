@@ -55,6 +55,9 @@ public class volte_dialer extends Application {
         Globals.is_receiver 	= VD_Settings.getBoolPref(this, 
         										VD_Settings.PREF_RECEIVER, 
         										false);
+        Globals.is_bgmode 		= VD_Settings.getBoolPref(this, 
+												VD_Settings.PREF_BGMODE, 
+												false);
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
         Globals.icallnumber 	= 0;
         Globals.is_mtc_ongoing	= false;
