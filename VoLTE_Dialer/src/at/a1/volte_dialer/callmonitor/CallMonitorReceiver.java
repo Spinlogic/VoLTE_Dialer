@@ -38,11 +38,11 @@ public class CallMonitorReceiver extends PhoneStateListener {
     public void onServiceStateChanged(ServiceState serviceState) {
 		super.onServiceStateChanged(serviceState);
 		int state = serviceState.getState();
-		int msgwhat = CallMonitorService.MSG_STATE_OUTSERVICE;
+		int msgwhat = CallMonitorService.MSG_SERVER_STATE_OUTSERVICE;
 		if(state == ServiceState.STATE_IN_SERVICE) {
-			msgwhat = CallMonitorService.MSG_STATE_INSERVICE;
+			msgwhat = CallMonitorService.MSG_SERVER_STATE_INSERVICE;
 		}
-		mCms.sendMsg(msgwhat);
+		mCms.sendMsg(msgwhat, null);
 	}
 	
 	@Override

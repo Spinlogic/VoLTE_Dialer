@@ -18,13 +18,7 @@
 
 package at.a1.volte_dialer.phonestate;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
 import android.content.Context;
-import android.os.Handler;
-import android.os.Message;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -58,8 +52,8 @@ public class PhoneStateHandler {
 		Log.d(TAG + METHOD, " Starting Phone state receivers.");
 	    // Start listening for changes in service and call states
 		TelephonyManager telMng = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		int flags = (Globals.is_running_as_system && !Globals.is_receiver) ? 0 : PhoneStateListener.LISTEN_CALL_STATE;
-		if(!Globals.is_receiver) {
+		int flags = (Globals.is_running_as_system && (Globals.opmode != Globals.OPMODE_MT)) ? 0 : PhoneStateListener.LISTEN_CALL_STATE;
+		if(Globals.opmode != Globals.OPMODE_MT) {
 			flags = flags | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | PhoneStateListener.LISTEN_SERVICE_STATE;
 		}
 	    telMng.listen(mPhoneStateReceiver, flags);

@@ -24,14 +24,19 @@ import java.util.Stack;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.os.Parcelable;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -47,7 +52,23 @@ import at.a1.volte_dialer.receiver.ReceiverService;
 public class VDMainActivity extends Activity {
 	private final String TAG = "VDMainActivity";
 	
-	private Thread count_thread;
+	private Thread 		count_thread;
+	private Messenger	mReceiverService = null;
+	
+	
+	private ServiceConnection mRsConnection = new ServiceConnection() {
+		
+        public void onServiceConnected(ComponentName className, IBinder service) {
+        	mReceiverService = new Messenger(service);
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+        	mReceiverService = null;
+        }
+    };
+
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +79,11 @@ public class VDMainActivity extends Activity {
 			getFragmentManager().beginTransaction()
 					.add(R.id.container, new PlaceholderFragment()).commit();
 		}
-		if(Globals.is_receiver) {
-			Intent intent = new Intent(this, ReceiverService.class);
-			startService(intent);
+		if((Globals.opmode == Globals.OPMODE_MT) && 
+					Globals.msisdn != null 		 && 
+					!Globals.msisdn.isEmpty()) {
+			bindReceiverService();
 		}
-		
 		Globals.mainactivity = this;
 		Globals.is_running_as_system = Globals.isAppRunningAsSystem();
 	}
@@ -71,27 +92,19 @@ public class VDMainActivity extends Activity {
 	protected void onDestroy() {
 /* Services are stopped when this activity is destroyed.
  * It is assumed that the user wants to use the phone for other purposes.	*/
-	if(Globals.is_receiver) {
-			Intent intent = new Intent(this, ReceiverService.class);
-			stopService(intent);
-	}
-	else {
-		if(Globals.is_vd_running) {
-			Intent intent = new Intent(this, DialerService.class);
-			stopService(intent);
+		if(mReceiverService != null) {
+				unbindReceiverService();
 		}
-	}
-	Globals.is_mtc_ongoing = false;
-	Globals.is_vd_running = false;
-	Globals.is_receiver_running = false;
-	Globals.mainactivity = null;
-	super.onDestroy();
+		else {
+			if(Globals.is_vd_running) {
+				stopDialerService();
+			}
+		}
+		Globals.is_mtc_ongoing = false;
+		Globals.mainactivity = null;
+		super.onDestroy();
 	}
 	
-	@Override
-	public void onStart() {
-		super.onStart();
-	}
 	
 	@Override
 	public void onResume() {
@@ -102,13 +115,15 @@ public class VDMainActivity extends Activity {
 	    TextView tv_role 	= (TextView) findViewById(R.id.role_tv);
 	    TextView tv_callnum = (TextView) findViewById(R.id.callnumber_tv);
 	    String txt_role = getString(R.string.str_role) + "  ";
-	    if(Globals.is_receiver) {
+	    if(Globals.opmode == Globals.OPMODE_BG) {
+	    	button.setEnabled(true);
+	    	btn_text = getString(R.string.btn_bg);
+	    	txt_role += getString(R.string.str_role_bg);
+	    } else if(Globals.opmode == Globals.OPMODE_MT) {
 	    	btn_text = getString(R.string.btn_disabled);
 	    	button.setEnabled(false);
-	    	txt_role += getString(R.string.str_role_mt);
-	    }
-	    else {
-	    	button.setEnabled(true);
+    		txt_role += getString(R.string.str_role_mt);
+	    } else {
 		    if(Globals.is_vd_running) {
 		    	btn_text = getString(R.string.btn_stop);
 		    }
@@ -125,7 +140,9 @@ public class VDMainActivity extends Activity {
 	    }
 	    button.setText(btn_text);
 	    tv_role.setText(txt_role);
-	    String txt_callnum = getResources().getText(R.string.str_callnum).toString() + "  " + Integer.toString(Globals.icallnumber);
+	    String txt_callnum = (Globals.opmode == Globals.OPMODE_BG) ? 
+	    		getString(R.string.str_send_bg) :
+	    		getString(R.string.str_callnum) + "  " + Integer.toString(Globals.icallnumber);
 	    tv_callnum.setText(txt_callnum);
 	}
 	
@@ -206,8 +223,10 @@ public class VDMainActivity extends Activity {
 	 */
 	public void processStarStopBtnClick(View view) {
 		String btn_text = "";
-		if(Globals.is_vd_running) {
-			Globals.is_vd_running = false;
+		if(Globals.opmode == Globals.OPMODE_BG) {
+			sendToBg();
+		} 
+		else if(Globals.is_vd_running) {
 			//	The stop process is as follows:
 			//	1. DialService is stopped.
 			//	2a. DialService hangs up the current call, if any.
@@ -220,14 +239,11 @@ public class VDMainActivity extends Activity {
 			//      stops PreciseCallStateReceiver.
 			Globals.icallnumber	= 0;
 			stopNextCallTimer();
-			Intent intent = new Intent(this, DialerService.class);
-    		stopService(intent);
+			stopDialerService();
     		btn_text = getResources().getText(R.string.btn_start).toString();
 		}
 		else {
-			Intent intent = new Intent(this, DialerService.class);
-    		startService(intent);
-    		Globals.is_vd_running = true;
+			startDialerService();
     		btn_text = getResources().getText(R.string.btn_stop).toString();
 		}
 		Button button = (Button) findViewById(R.id.startstop_button);
@@ -314,7 +330,7 @@ public class VDMainActivity extends Activity {
 	    	final String units = getString(R.string.str_seconds);
 	    	final TextView tv_counter = (TextView) findViewById(R.id.counter_tv); */
     		if(count_thread != null) {
-    			count_thread = null;	// MUST be stopped	
+    			count_thread = null;	// MUST be stopped
     		}
 	    	count_thread = new Thread() {
 	    		int countdown = Globals.timebetweencalls;
@@ -354,6 +370,69 @@ public class VDMainActivity extends Activity {
 	    	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
 	    	tv_counter.setText(""); 	// empty the text
     	}
+    }
+    
+    
+    public void bindReceiverService() {
+    	Intent intent = new Intent(this, ReceiverService.class);
+		String suffix = (Globals.msisdn.length() < Globals.RIGHT_MATCH) ? 
+						Globals.msisdn : 
+						Globals.msisdn.substring(Globals.msisdn.length() - Globals.RIGHT_MATCH);
+		intent.putExtra(ReceiverService.EXTRA_SUFFIX, suffix);
+		bindService(intent, mRsConnection, Context.BIND_AUTO_CREATE);
+    }
+    
+    
+    public void unbindReceiverService() {
+    	unbindService(mRsConnection);
+    	mReceiverService = null;
+    }
+    
+    
+    public void startDialerService() {
+    	if(!Globals.msisdn.isEmpty()) {
+    		Globals.is_vd_running = true;
+	    	Intent intent = new Intent(this, DialerService.class);
+			intent.putExtra(ReceiverService.EXTRA_SUFFIX, Globals.msisdn);
+			startService(intent);
+    	}
+    }
+    
+    
+    public void stopDialerService() {
+    	Globals.is_vd_running = false;
+    	Intent intent = new Intent(this, DialerService.class);
+    	stopService(intent);
+    }
+    
+    public void newMsisdn() {
+    	final String METHOD = "::newMsisdn()   ";
+    	if(mReceiverService != null) {
+    		String suffix = (Globals.msisdn.length() < Globals.RIGHT_MATCH) ? 
+					Globals.msisdn : 
+					Globals.msisdn.substring(Globals.msisdn.length() - Globals.RIGHT_MATCH);
+    		Bundle b = new Bundle();
+    		b.putString(ReceiverService.EXTRA_SUFFIX, suffix);
+    		Log.i(TAG + METHOD, "Sending new suffix.");
+			Message msg = Message.obtain(null, ReceiverService.MSG_NEW_SUFFIX, 0, 0);
+			msg.setData(b);
+			try {
+				mReceiverService.send(msg);
+				Log.i(TAG + METHOD, "Message sent to client.");
+			} catch (RemoteException e) {
+				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+			}
+    	}
+    	else {
+    		// Dialer service case
+    	}
+    }
+    
+    private void sendToBg() {
+    	Intent i = new Intent();
+    	i.setAction(Intent.ACTION_MAIN);
+    	i.addCategory(Intent.CATEGORY_HOME);
+    	this.startActivity(i);
     }
 
 }

@@ -60,7 +60,7 @@ public class PhoneStateReceiver extends PhoneStateListener {
 	public void onCallStateChanged(int state, String incomingNumber) {
 		switch(state) {
 			case TelephonyManager.CALL_STATE_IDLE:
-				if(!Globals.is_receiver && DialerHandler.isCallOngoing()) {
+				if((Globals.opmode != Globals.OPMODE_MT) && DialerHandler.isCallOngoing()) {
 					// The call has been disconnected by the network.
 					// Stop pending alarms to terminate the call from UE side.
 					DialerHandler.stop(context);
@@ -75,12 +75,12 @@ public class PhoneStateReceiver extends PhoneStateListener {
 				Globals.is_mtc_ongoing = false;
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
-				if(Globals.is_receiver) {
+				if(Globals.opmode == Globals.OPMODE_MT) {
 					if(incomingNumber != null && !incomingNumber.isEmpty()) {
 						// right match of the last n - 2 digits
 						String numbertomatch = incomingNumber.substring(2);
 						if(Globals.msisdn.contains(numbertomatch)) {
-							Globals.answerCall(context);
+//							Globals.answerCall(context);
 							Globals.is_mtc_ongoing = true;
 							Globals.icallnumber++;
 							if(Globals.mainactivity != null) {
@@ -94,7 +94,7 @@ public class PhoneStateReceiver extends PhoneStateListener {
 				}
 				break;
 			case TelephonyManager.CALL_STATE_OFFHOOK:
-				if(!Globals.is_receiver) {
+				if(Globals.opmode != Globals.OPMODE_MT) {
 					DialerHandler.setCallState(TelephonyManager.CALL_STATE_OFFHOOK); // DEBUG
 				}
 				// This state is triggered when the line is seized. The call is being dialed.

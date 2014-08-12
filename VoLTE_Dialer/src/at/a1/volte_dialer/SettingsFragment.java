@@ -29,6 +29,7 @@ import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
 import android.widget.Toast;
+import at.a1.volte_dialer.callmonitor.CallMonitorService;
 import at.a1.volte_dialer.dialer.DialerService;
 import at.a1.volte_dialer.receiver.ReceiverService;
 
@@ -53,7 +54,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	    MsisdnETPref.setSummary(Globals.msisdn);
 	    
 	    ReceiverPref = (CheckBoxPreference) findPreference(VD_Settings.PREF_RECEIVER);
-	    String receiversum = (Globals.is_receiver) ? 
+	    String receiversum = (Globals.opmode == Globals.OPMODE_MT) ? 
 	    					getActivity().getString(R.string.pref_mt_role) : 
 	    					getActivity().getString(R.string.pref_mo_role);
 	    ReceiverPref.setSummary(receiversum);
@@ -102,25 +103,24 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 		if(key.equals(VD_Settings.PREF_MSIDN)) {
         	Globals.msisdn = sharedPreferences.getString(key, Globals.DEF_MSISDN);
         	MsisdnETPref.setSummary(MsisdnETPref.getText());
-        } else if(key.equals(VD_Settings.PREF_RECEIVER)) {
-        	Globals.is_receiver = sharedPreferences.getBoolean(key, false);
-        	String receiversum = (Globals.is_receiver) ? 
+        	Globals.mainactivity.newMsisdn();
+        } else if(key.equals(VD_Settings.PREF_RECEIVER)) {  // RECEIVER vs SENDER modes
+        	Globals.opmode = (sharedPreferences.getBoolean(key, false)) ? Globals.OPMODE_MT : Globals.OPMODE_MO;
+        	String receiversum = (Globals.opmode == Globals.OPMODE_MT) ? 
  					getActivity().getString(R.string.pref_mt_role) : 
  					getActivity().getString(R.string.pref_mo_role);
  			ReceiverPref.setSummary(receiversum);
- 			if(Globals.is_receiver) {
+ 			if(Globals.opmode == Globals.OPMODE_MT) {
  				if(Globals.is_vd_running) {
+ 					Globals.mainactivity.stopNextCallTimer();
 	 				// stop the service that is establishing calls
-	 				Intent intent = new Intent(getActivity(), DialerService.class);
-	 				getActivity().stopService(intent);
+ 					Globals.mainactivity.stopDialerService();
  				}
- 				Intent intent = new Intent(getActivity(), ReceiverService.class);
- 				getActivity().startService(intent);
+ 				Globals.mainactivity.bindReceiverService();
  			}
  			else {
  				// stop receiver service
- 				Intent intent = new Intent(getActivity(), ReceiverService.class);
- 				getActivity().stopService(intent);
+ 				Globals.mainactivity.unbindReceiverService();
  			}
  			Globals.icallnumber	= 0;	// reset call counter
         } else if(key.equals(VD_Settings.PREF_CALL_DURATION)) {
@@ -142,8 +142,38 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         			editor.commit();
         		}
     	    }
+        } else if(key.equals(VD_Settings.PREF_BGMODE)) {
+        	if(Globals.is_vd_running) {	// stop running instance
+    			Globals.icallnumber	= 0;
+    			Globals.mainactivity.stopNextCallTimer();
+    			Globals.mainactivity.stopDialerService();
+        	}
+        	if(sharedPreferences.getBoolean(key, false)) {	// BG mode activated
+        		if(Globals.opmode == Globals.OPMODE_MT){
+            		Globals.mainactivity.unbindReceiverService();
+            		// TODO: hangup ongoing call, if any
+            	}
+        		// Activate bg call monitoring
+        		Globals.opmode = Globals.OPMODE_BG;
+        		Intent cms = new Intent(getActivity(), CallMonitorService.class);
+        		getActivity().startService(cms);
+        	} else {	// BG mode deactivated
+        		// deactivate bg call monitoring
+        		Intent cms = new Intent(getActivity(), CallMonitorService.class);
+        		getActivity().stopService(cms);
+        		
+        		// Check mode to activate
+        		if(sharedPreferences.getBoolean(VD_Settings.PREF_RECEIVER, false)) {	// BG mode deactivated and receiver
+	        		Globals.opmode = Globals.OPMODE_MT;
+	        		Globals.mainactivity.bindReceiverService();
+        		}
+	        	else {	// BG mode deactivated and sender
+	        		Globals.opmode = Globals.OPMODE_MO;
+	        	}
+        	}
         }
     }
+	
 	
 	private boolean isValidUrl(CharSequence url) {
 		boolean isvalid = false;

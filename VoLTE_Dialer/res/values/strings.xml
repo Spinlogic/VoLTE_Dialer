@@ -34,11 +34,14 @@
     <string name="str_role">Role:</string>
     <string name="str_role_mo">Sender (MO calls)</string>
     <string name="str_role_mt">Receiver (MT calls)</string>
+    <string name="str_role_bg">Running in Background Mode.</string>
+    <string name="str_send_bg">Send app to background</string>
     <string name="str_callnum">Call number:</string>
     <string name="str_timetonextcall">Next call in</string>
     <string name="str_seconds">seconds</string>
     <string name="btn_start">Start</string>
     <string name="btn_stop">Stop</string>
+    <string name="btn_bg">Send to background</string>
     <string name="btn_disabled">Disabled</string>
      
 </resources>

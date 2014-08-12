@@ -46,24 +46,36 @@ import android.util.Log;
 public class CallMonitorService extends Service {
 	private static final String TAG = "CallMonitorService";
 	
-	final static public String EXTRA_CLIENTMSGR 	= "client";			// binder to the client
-
+	// Extras for the intent create by the client
+//	final static public String EXTRA_CLIENTMSGR 	= "client";		// binder to the client
+	final static public String EXTRA_OPMODE 		= "opmode";		
 	
 	// Messages that this service can receive from clients
-	static final int MSG_CLIENT_DISCONNECT = 1;	// The client has disconnected the call
+	public static final int MSG_CLIENT_DISCONNECT 	= 1;	// The client has disconnected the call
+	public static final int MSG_CLIENT_ADDHANDLER 	= 2;
 	
 	// Messages that this service passes to the clients
-	static final int MSG_STATE_INSERVICE	= 0;	// The service state is STATE_IN_SERVICE
-	static final int MSG_STATE_OUTSERVICE	= 1;	// The service state is STATE_EMERGENCY_ONLY, STATE_OUT_OF_SERVICE or STATE_POWER_OFF
+	public static final int MSG_SERVER_STATE_INSERVICE	= 0;	// The service state is STATE_IN_SERVICE
+	public static final int MSG_SERVER_STATE_OUTSERVICE	= 1;	// The service state is STATE_EMERGENCY_ONLY, STATE_OUT_OF_SERVICE or STATE_POWER_OFF
+	public static final int MSG_SERVER_INCOMING_CALL	= 2;	
+	
+	// Operation modes
+	public static final int OPMODE_BG = 100;		// Background
+	public static final int OPMODE_MT = 101;		// Receiver
+	public static final int OPMODE_MO = 102;		// Sender
+	
+	// Extras for MSG_SERVER_INCOMING_CALL sent to client
+	final static public String EXTRA_MTC_MSISDN = "msisdn";
 	
 	private boolean 				is_system;
 	private boolean					is_client_diconnect;
+	private int						opmode;
 	private CallMonitorReceiver 	mCallMonitorReceiver;
 	private OutgoingCallReceiver 	mOutgoingCallReceiver;
 	private CallDescription			mCallDescription;
 	
-	private Messenger mClient;		// provided by client to service
-	final Messenger mService = new Messenger(new IncomingHandler());	// provided by service to client
+	private Messenger mClient;		// provided by client to service (at most one client can be bound)
+	final Messenger mService;		// provided by service to client
 	
 	/**
      * Handler of incoming messages from clients.
@@ -78,6 +90,11 @@ public class CallMonitorService extends Service {
                 	is_client_diconnect = true;
                 	Log.i(TAG + METHOD, "MSG_CLIENT_DISCONNECT received from client.");
                     break;
+                case MSG_CLIENT_ADDHANDLER:
+                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from client.");
+                	mClient = msg.replyTo;
+                	activateReceivers();	// when bounding, we activate receivers here
+                    break;
                 default:
                     super.handleMessage(msg);
             }
@@ -91,9 +108,17 @@ public class CallMonitorService extends Service {
 		mOutgoingCallReceiver	= null;
 		mCallDescription		= null;
 		mClient					= null;
+		opmode					= OPMODE_BG;
+		mService 				= new Messenger(new IncomingHandler());
 		CallLogger.initializeValues();		// init logging
 	}
 
+	/**
+	 * This is only called when the service is created to operate
+	 * in background mode. For sender and receiver modes, onBind is
+	 * called instead. 
+	 * 
+	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		final String METHOD = "::onStartCommand()  ";
@@ -101,27 +126,15 @@ public class CallMonitorService extends Service {
 		Log.i(TAG + METHOD, "Starting service.");
 		Bundle extras = intent.getExtras();
 		if(extras != null) {
-			if(extras.containsKey(EXTRA_CLIENTMSGR)) {
-				mClient = new Messenger(extras.getBinder(EXTRA_CLIENTMSGR));
+//			if(extras.containsKey(EXTRA_CLIENTMSGR)) {
+//				mClient = new Messenger(extras.getBinder(EXTRA_CLIENTMSGR));
+//			}
+			if(extras.containsKey(EXTRA_OPMODE)) {
+				opmode = extras.getInt(EXTRA_OPMODE);
 			}
 		}
 		is_system	= isRunningAsSystem();
-		mCallMonitorReceiver = new CallMonitorReceiver(this);
-		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		int mflags = PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | 
-					 PhoneStateListener.LISTEN_SERVICE_STATE;
-		if(!is_system) {
-			mflags |= PhoneStateListener.LISTEN_CALL_STATE;
-		}
-		else {
-			// TODO: start precise call monitor received
-		}
-		mOutgoingCallReceiver = new OutgoingCallReceiver(this);
-		telMng.listen(mCallMonitorReceiver, mflags);
-		
-		// To get number for outgoing calls
-		IntentFilter mocFilter = new IntentFilter(Intent.ACTION_NEW_OUTGOING_CALL);
-		registerReceiver(mOutgoingCallReceiver, mocFilter);
+		activateReceivers();
 	    
 		Log.i(TAG + METHOD, "Service started.");
 		int res = super.onStartCommand(intent, flags, startId);
@@ -133,13 +146,33 @@ public class CallMonitorService extends Service {
 		final String METHOD = "::onDestroy()  ";
 		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(mCallMonitorReceiver, PhoneStateListener.LISTEN_NONE);
-		unregisterReceiver(mOutgoingCallReceiver);
+		if(mOutgoingCallReceiver != null) {
+			unregisterReceiver(mOutgoingCallReceiver);
+		}
+		mClient = null;
 		Log.i(TAG + METHOD, " Call info receivers stopped.");
 		super.onDestroy();
 	}
 
 	@Override
     public IBinder onBind(Intent intent) {
+		final String METHOD = "::onBind()  ";
+		
+		// Only one client can be bound to this service at any given time
+		if(mClient != null) {
+			return null;
+		}
+		
+		Bundle extras = intent.getExtras();
+		if(extras != null) {
+//			if(extras.containsKey(EXTRA_CLIENTMSGR)) {
+//				mClient = new Messenger(extras.getBinder(EXTRA_CLIENTMSGR));
+//			}
+			if(extras.containsKey(EXTRA_OPMODE)) {
+				opmode = extras.getInt(EXTRA_OPMODE);
+			}
+		}
+		is_system	= isRunningAsSystem();
 		return mService.getBinder();
 	}
 	
@@ -164,6 +197,14 @@ public class CallMonitorService extends Service {
 				mCallDescription.setPrefix(mt_msisdn.substring(0, plength));
 			}
 		}
+		// Notify incoming call if 
+		if(opmode == OPMODE_MT) {
+			if(mt_msisdn != null && !mt_msisdn.isEmpty()) {
+				Bundle bundle = new Bundle();
+				bundle.putString(EXTRA_MTC_MSISDN, mt_msisdn);
+				sendMsg(MSG_SERVER_INCOMING_CALL, bundle);
+			}
+		}
 	}
 	
 	/**
@@ -179,9 +220,11 @@ public class CallMonitorService extends Service {
 		if(is_client_diconnect) {
 			side = CallDescription.CALL_DISCONNECTED_BY_UE;
 		}
-		mCallDescription.endCall(side, strength);
-		mCallDescription.writeCallInfoToLog();
-		mCallDescription = null;	// no needed any more
+		if(mCallDescription != null) {
+			mCallDescription.endCall(side, strength);
+			mCallDescription.writeCallInfoToLog();
+			mCallDescription = null;	// no needed any more
+		}
 		Log.i(TAG + METHOD, " Call terminated.");
 	}
 	
@@ -209,18 +252,43 @@ public class CallMonitorService extends Service {
 	 * by the client, if any.
 	 * @param what
 	 */
-	public void sendMsg(int what) {
+	public void sendMsg(int what, Bundle bundle) {
 		final String METHOD = "::sendMsg()  ";
 		
 		if(mClient != null) {
 			Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 			Message msg = Message.obtain(null, what, 0, 0);
+			if(bundle != null) {
+				msg.setData(bundle);
+			}
 			try {
 				mClient.send(msg);
 				Log.i(TAG + METHOD, "Message sent to client.");
 			} catch (RemoteException e) {
 				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
 			}
+		}
+	}
+	
+	
+	private void activateReceivers() {
+		mCallMonitorReceiver = new CallMonitorReceiver(this);
+		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+		int mflags = PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | 
+					 PhoneStateListener.LISTEN_SERVICE_STATE;
+		if(!is_system) {
+			mflags |= PhoneStateListener.LISTEN_CALL_STATE;
+		}
+		else {
+			// TODO: start precise call monitor received
+		}
+		telMng.listen(mCallMonitorReceiver, mflags);
+		
+		if(opmode != OPMODE_MT) {	// not needed in receiver mode
+			mOutgoingCallReceiver = new OutgoingCallReceiver(this);
+			// To get number for outgoing calls
+			IntentFilter mocFilter = new IntentFilter(Intent.ACTION_NEW_OUTGOING_CALL);
+			registerReceiver(mOutgoingCallReceiver, mocFilter);
 		}
 	}
 	

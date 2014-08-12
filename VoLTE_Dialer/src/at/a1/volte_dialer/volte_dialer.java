@@ -39,12 +39,11 @@ public class volte_dialer extends Application {
 		// Initialize global variables 
         Globals.is_running_as_system 	= false;
         Globals.is_vd_running 			= false;
-        Globals.is_receiver_running 	= false;
         Globals.msisdn 			= VD_Settings.getStringPref(
 						        				this,
 						        				VD_Settings.PREF_MSIDN,
 						        				Globals.DEF_MSISDN);
-        Globals.callduration	= Integer.parseInt(VD_Settings.getStringPref(
+        Globals.callduration	 = Integer.parseInt(VD_Settings.getStringPref(
 						        				this, 
 						        				VD_Settings.PREF_CALL_DURATION,
 						        				"20"));
@@ -52,12 +51,18 @@ public class volte_dialer extends Application {
 						        				this, 
 						        				VD_Settings.PREF_WAIT_TIME,
 						        				"20"));
-        Globals.is_receiver 	= VD_Settings.getBoolPref(this, 
-        										VD_Settings.PREF_RECEIVER, 
-        										false);
-        Globals.is_bgmode 		= VD_Settings.getBoolPref(this, 
+        boolean is_bgmode 	 	 = VD_Settings.getBoolPref(this, 
 												VD_Settings.PREF_BGMODE, 
 												false);
+        if(is_bgmode) {
+        	Globals.opmode = Globals.OPMODE_BG;
+        }
+        else {
+        	boolean is_receiver  = VD_Settings.getBoolPref(this, 
+        										VD_Settings.PREF_RECEIVER, 
+        										false);
+        	Globals.opmode = (is_receiver) ? Globals.OPMODE_MT : Globals.OPMODE_MO;
+        }
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
         Globals.icallnumber 	= 0;
         Globals.is_mtc_ongoing	= false;

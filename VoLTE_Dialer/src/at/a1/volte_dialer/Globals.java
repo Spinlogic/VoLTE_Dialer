@@ -42,18 +42,22 @@ public class Globals {
 	public static final String FN_VDDIR 	= "volte_dialer";		// This is the directory in the external 
 																	//	storage where reports are stored
 	public static final String FN_VDLOG 	= "vdlog.txt";			// Log file
-	public static final String DEF_MSISDN 	= "066466618";					// Default test number where to call to
+	public static final String DEF_MSISDN 	= "066466618";			// Default test number where to call to
+	public static final int RIGHT_MATCH		= 6;					// MSISDN right matching for this number of digits 
 	public static final String DEF_EMAIL 	= "juan.noguera@a1telekom.at";	
 	public static final int average_call_setup_time = 10;			// Average call setup time to test number in seconds
 	public static final int max_call_setup_time = 60;				// Maximum call setup time. Only used when running is system space.
+	
+	// Operation modes
+	public static final int OPMODE_BG = 100;		// Background
+	public static final int OPMODE_MT = 101;		// Receiver
+	public static final int OPMODE_MO = 102;		// Sender
 	// ---- End constants ----
 	
 	
 	// ---- Variables ----
 	public static boolean	is_running_as_system;	// is the app running as system process?
-	public static boolean	is_bgmode;				// is configured to listen in background?
-	public static boolean	is_receiver;			// is the app configured for MO or MT. Receiver = MT.
-	public static boolean	is_receiver_running;	// indicates if the receiver service is running
+	public static int		opmode;					// Mode of operation
 	public static boolean	is_mtc_ongoing;			// indicates if there is a MT call ongoing
     public static boolean	is_vd_running;			// is the dialer running?
 	public static String 	msisdn;					// TelNum to call to
@@ -137,18 +141,6 @@ public class Globals {
 			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
 	    }
 	}
-	
-    public static void answerCall(Context context) {
-    	final String METHOD = ":answerCall()  ";
-    	try {
-    		Intent i = new Intent(Intent.ACTION_MEDIA_BUTTON);
-    		i.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP,
-    	            KeyEvent.KEYCODE_HEADSETHOOK));
-    		context.sendOrderedBroadcast(i, null);
-    	} catch(Exception e) {
-    		Log.d(TAG + METHOD, "Exception: " + e);
-    	}
-    }
     
     
     /**
