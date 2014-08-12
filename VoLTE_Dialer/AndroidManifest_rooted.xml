@@ -9,6 +9,8 @@
         android:minSdkVersion="18"
         android:targetSdkVersion="19" />
     
+    <!-- needed by BootUpReceiver -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- needed by VD_Logger -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   	<!-- needed by PhoneStateService to read ServiceState  and CallState-->
@@ -32,7 +34,6 @@
    	
     <application
         android:allowBackup="true"
-        android:process="com.android.phone"
         android:name="at.a1.volte_dialer.volte_dialer"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -48,17 +49,32 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Dialer package -->
         <receiver android:name="at.a1.volte_dialer.dialer.DialerReceiver" />
         <service android:name="at.a1.volte_dialer.dialer.DialerService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
+        
+        <!-- PhoneState package -->
 		<receiver android:name="at.a1.volte_dialer.phonestate.PhoneStateReceiver" />
         <service android:name="at.a1.volte_dialer.phonestate.PhoneStateService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
+        
+        <!-- Receiver package -->
 		<service android:name="at.a1.volte_dialer.receiver.ReceiverService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
+		
+		<!-- CallMonitor package -->
+		<receiver android:name="at.a1.volte_dialer.callmonitor.CallMonitorReceiver" />
+		<receiver android:name="at.a1.volte_dialer.callmonitor.OutgoingCallReceiver" />
+		<service android:name="at.a1.volte_dialer.callmonitor.CallMonitorService"
+		    	 android:process="com.android.phone"
+		    	 android:enabled="true"
+		    	 android:exported="false" />
+		
     </application>
 
 </manifest>

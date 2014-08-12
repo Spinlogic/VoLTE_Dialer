@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package at.a1.volte_dialer;
+package at.a1.volte_dialer.callmonitor;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,10 +28,14 @@ import java.util.Date;
 import android.os.Environment;
 import android.util.Log;
 
-public class VD_Logger {
+public class CallLogger {
 	final static String TAG = "VD_Logger";
-		
+	
 	public static final String	CSV_CHAR	= ",";	// character to separate entries in log
+	
+	// Log file directory and name
+	public static final String FN_VDDIR = "volte_dialer";
+	public static final String FN_VDLOG = "vdlog.txt";
 	
 	private static File logFile;
 	
@@ -45,12 +49,12 @@ public class VD_Logger {
 		
 		//	We have to select which log file to use.
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
-			File path = new File(Environment.getExternalStorageDirectory() + File.separator + Globals.FN_VDDIR);
+			File path = new File(Environment.getExternalStorageDirectory() + File.separator + FN_VDDIR);
 			//	Make directory if it does not exist
 			if(!path.exists()) {
 				path.mkdir();
 			}
-			logFile = new File(path, Globals.FN_VDLOG);
+			logFile = new File(path, FN_VDLOG);
 		}
 	}
 
@@ -63,7 +67,7 @@ public class VD_Logger {
 				if(logFile.createNewFile()) {
 					// Write the header. Must correspond with logged fields in 
 					// at.a1.volte_dialer_dialer.CallDescription
-					String logline = "DATE,TIME,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
+					String logline = "DATE,TIME,DIRECTION,PREFIX,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
 									 "DISCONNECT CAUSE,START CID,START SIGNAL,END CID,END SIGNAL,SRVCC";
 					insertLine(logline);
 					Log.d(TAG + METHOD, "appendLog: Creating new logfile");

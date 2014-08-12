@@ -21,12 +21,12 @@ package at.a1.volte_dialer.callmonitor;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
 import android.telephony.SignalStrength;
-import at.a1.volte_dialer.Globals;
+import android.telephony.TelephonyManager;
 
 public class CallMonitorReceiver extends PhoneStateListener {
 	private static final String TAG = "CallMonitorReceiver";
 	
-	public static int 	signalstrength;
+	public static int signalstrength;
 	CallMonitorService	mCms;
 	
 	public CallMonitorReceiver(CallMonitorService cms) {
@@ -37,12 +37,27 @@ public class CallMonitorReceiver extends PhoneStateListener {
 	@Override
     public void onServiceStateChanged(ServiceState serviceState) {
 		super.onServiceStateChanged(serviceState);
-		Globals.iservicestate = serviceState.getState();
+		int state = serviceState.getState();
+		int msgwhat = CallMonitorService.MSG_STATE_OUTSERVICE;
+		if(state == ServiceState.STATE_IN_SERVICE) {
+			msgwhat = CallMonitorService.MSG_STATE_INSERVICE;
+		}
+		mCms.sendMsg(msgwhat);
 	}
 	
 	@Override
 	public void onCallStateChanged(int state, String incomingNumber) {
-		mCms.callStateChangedNotif(state, incomingNumber);
+		switch(state) {
+			case TelephonyManager.CALL_STATE_IDLE:
+				mCms.endCall(signalstrength);
+				break;
+			case TelephonyManager.CALL_STATE_RINGING:
+				mCms.startCall(CallDescription.MT_CALL, incomingNumber);
+				break;
+			case TelephonyManager.CALL_STATE_OFFHOOK:
+				mCms.startCall(CallDescription.MO_CALL, incomingNumber);
+				break;
+		}
 	}
 	
 	@Override
