@@ -64,11 +64,10 @@ public class ReceiverService extends Service {
 	
 	private String suffix;
 	
-	
-	private Messenger mCms;			// provided by CallMonitorService to this service
-	final Messenger mClient;		// provided by this service to CallMonitorService
-	private Messenger mAcServer;	// provided by this service to the calling activity
-	final Messenger mAcClient;		// provided by the calling activity to this service
+	final Messenger 	mCmsClient;		// provided by this service to CallMonitorService
+	private Messenger 	mCmsServer;		// provided by CallMonitorService to this service
+	final Messenger 	mRsServer;		// provided by this service to the calling activity
+	private Messenger 	mRsClient;		// provided by the calling activity to this service
 	
 	
 	/**
@@ -87,7 +86,7 @@ public class ReceiverService extends Service {
                 	Log.i(TAG + METHOD, "MSISDN: " + msisdn);
                 	if(msisdn != null) {
                 		if(msisdn.endsWith(suffix)) {
-                			sendMsg(mAcClient, MSG_RS_NEWCALLATTEMPT, null);
+                			sendMsg(mRsClient, MSG_RS_NEWCALLATTEMPT, null);
                 			answerCall();
                 		}
                 	}
@@ -124,7 +123,7 @@ public class ReceiverService extends Service {
                     break;
                 case MSG_CLIENT_ADDHANDLER:
                 	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
-                	mAcServer = msg.replyTo;
+                	mRsClient = msg.replyTo;
                 	break;
                 default:
                     super.handleMessage(msg);
@@ -135,10 +134,10 @@ public class ReceiverService extends Service {
 	
 	public ReceiverService() {
 		suffix		= "";
-		mCms		= null;
-		mAcClient	= null;
-		mClient 	= new Messenger(new CmsHandler());
-		mAcServer 	= new Messenger(new IncomingHandler());
+		mCmsServer	= null;
+		mCmsClient 	= new Messenger(new CmsHandler());
+		mRsClient	= null;
+		mRsServer 	= new Messenger(new IncomingHandler());
 	}
 	
 	
@@ -146,14 +145,14 @@ public class ReceiverService extends Service {
 		
         public void onServiceConnected(ComponentName className, IBinder service) {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
-        	mCms = new Messenger(service);
-            sendMsg(mCms, CallMonitorService.MSG_CLIENT_ADDHANDLER, mClient);
+        	mCmsServer = new Messenger(service);
+            sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ADDHANDLER, mCmsClient);
             Log.i(TAG + METHOD, "Bound to CallMonitorService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
-        	mCms = null;
+        	mCmsServer = null;
             Log.d(TAG + METHOD, "Unbound to CallMonitorService");
         }
     };
@@ -186,9 +185,9 @@ public class ReceiverService extends Service {
 			Globals.hangupCall();	// No need to check whether it is in system space.
 			Globals.is_mtc_ongoing = false;
 		}
-		if(mCms != null) {
+		if(mCmsServer != null) {
             unbindService(mConnection);
-            mCms = null;
+            mCmsServer = null;
             Log.i(TAG + METHOD, "Unbound to CallMonitorService");
         }
 		Log.i(TAG + METHOD, "service stopped");
@@ -209,7 +208,7 @@ public class ReceiverService extends Service {
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
 		Log.d(TAG + METHOD, "Binding to CallMonitorService");
 		
-		return mAcServer.getBinder();
+		return mRsServer.getBinder();
 	}
 	
 	
@@ -221,19 +220,24 @@ public class ReceiverService extends Service {
 	 * @param what
 	 * @param messenger
 	 */
-	public void sendMsg(Messenger fromMsgr, int what, Messenger rplyToMsgr) {
+	public void sendMsg(Messenger toMsgr, int what, Messenger rplyToMsgr) {
 		final String METHOD = "::sendMsg()  ";
 		
-		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
-		Message msg = Message.obtain(null, what, 0, 0);
-		if(rplyToMsgr != null) {
-			msg.replyTo = rplyToMsgr;
+		if(toMsgr != null) {
+			Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+			Message msg = Message.obtain(null, what, 0, 0);
+			if(rplyToMsgr != null) {
+				msg.replyTo = rplyToMsgr;
+			}
+			try {
+				toMsgr.send(msg);
+				Log.i(TAG + METHOD, "Message sent to client.");
+			} catch (RemoteException e) {
+				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+			}
 		}
-		try {
-			fromMsgr.send(msg);
-			Log.i(TAG + METHOD, "Message sent to client.");
-		} catch (RemoteException e) {
-			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		else {
+			Log.d(TAG + METHOD, "ERROR. Null value for toMsgr.");
 		}
 	}
 	

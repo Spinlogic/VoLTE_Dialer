@@ -18,11 +18,14 @@
 
 package at.a1.volte_dialer.callmonitor;
 
+import java.lang.reflect.Method;
+
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -50,17 +53,18 @@ public class CallMonitorService extends Service {
 //	final static public String EXTRA_CLIENTMSGR 	= "client";		// binder to the client
 	final static public String EXTRA_OPMODE 		= "opmode";		
 	
-	// Messages from clients to this
-	public static final int MSG_CLIENT_DISCONNECT 	= 1;	// The client has disconnected the call
+	// Messages from clients to this service
+	public static final int MSG_CLIENT_ENDCALL 		= 1;		// Disconnect triggered by the client
 	public static final int MSG_CLIENT_ADDHANDLER 	= 2;	// Add the messenger to send messages to client
-	public static final int MSG_CLIENT_ENDCALL 		= 3;	// Hangup ongoing call
 	
 	// Messages from this service to clients
 	public static final int MSG_SERVER_STATE_INSERVICE	= 0;	// The service state is STATE_IN_SERVICE
 	public static final int MSG_SERVER_STATE_OUTSERVICE	= 1;	// The service state is STATE_EMERGENCY_ONLY, STATE_OUT_OF_SERVICE or STATE_POWER_OFF
 	public static final int MSG_SERVER_INCOMING_CALL	= 2;
-	public static final int MSG_SERVER_OUTCALL_START	= 3;
-	public static final int MSG_SERVER_OUTCALL_END		= 4;
+	public static final int MSG_SERVER_OUTCALL_DIALING	= 3;
+	public static final int MSG_SERVER_OUTCALL_ACTIVE	= 4;
+	public static final int MSG_SERVER_OUTCALL_END		= 5;
+	public static final int MSG_SERVER_SYSTEMPROCESS	= 6;	// sent to client if this service is running in the system process
 	
 	// Operation modes
 	public static final int OPMODE_BG = 100;		// Background
@@ -89,13 +93,15 @@ public class CallMonitorService extends Service {
         public void handleMessage(Message msg) {
         	final String METHOD = "::IncomingHandler::handleMessage()  ";
             switch (msg.what) {
-                case MSG_CLIENT_DISCONNECT:
+                case MSG_CLIENT_ENDCALL:
                 	is_client_diconnect = true;
+                	hangupCall();
                 	Log.i(TAG + METHOD, "MSG_CLIENT_DISCONNECT received from client.");
                     break;
                 case MSG_CLIENT_ADDHANDLER:
                 	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from client.");
                 	mClient = msg.replyTo;
+                	sendMsg(MSG_SERVER_SYSTEMPROCESS, null);
                 	activateReceivers();	// when bounding, we activate receivers here
                     break;
                 default:
@@ -228,6 +234,9 @@ public class CallMonitorService extends Service {
 			mCallDescription.writeCallInfoToLog();
 			mCallDescription = null;	// no needed any more
 		}
+		if(opmode == OPMODE_MO) {
+			sendMsg(MSG_SERVER_OUTCALL_END, null);
+		}
 		Log.i(TAG + METHOD, " Call terminated.");
 	}
 	
@@ -248,6 +257,9 @@ public class CallMonitorService extends Service {
 			mCallDescription.setPrefix(bpty.substring(0, plength));
 		}
 		mCallDescription.setDirection(CallDescription.MO_CALL);
+		if(opmode == OPMODE_MO) {
+			sendMsg(MSG_SERVER_OUTCALL_DIALING, null);
+		}
 	}
 	
 	/**
@@ -312,4 +324,80 @@ public class CallMonitorService extends Service {
     	int myuid = android.os.Process.myUid();
     	return (myuid == uid_radio || myuid == uid_system || myuid == uid_root) ? true : false;
     }
+    
+    
+    private void hangupCall() {
+    	if(is_system) {
+    		hangupCallSoft();
+    	}
+    	else {
+    		hangupCallHard();
+    	}
+    }
+    
+    
+	/**
+	 * Uses reflection to hang an active call up
+	 */
+	private void hangupCallSoft(){
+		final String METHOD = ":hangupCall()  ";
+		try {
+	        //String serviceManagerName = "android.os.IServiceManager";
+	        String serviceManagerName = "android.os.ServiceManager";
+	        String serviceManagerNativeName = "android.os.ServiceManagerNative";
+	        String telephonyName = "com.android.internal.telephony.ITelephony";
+
+	        Class telephonyClass;
+	        Class telephonyStubClass;
+	        Class serviceManagerClass;
+	        Class serviceManagerNativeClass;
+	        Class serviceManagerNativeStubClass;
+
+	        //	Method telephonyCall;
+	        Method telephonyEndCall;
+	        //	Method telephonyAnswerCall;
+	        Method getDefault;
+
+	        // Method getService;
+	        Object telephonyObject;
+	        Object serviceManagerObject;
+
+	        telephonyClass = Class.forName(telephonyName);
+	        telephonyStubClass = telephonyClass.getClasses()[0];
+	        serviceManagerClass = Class.forName(serviceManagerName);
+	        serviceManagerNativeClass = Class.forName(serviceManagerNativeName);
+
+	        Method getService = // getDefaults[29];
+	                serviceManagerClass.getMethod("getService", String.class);
+
+	        Method tempInterfaceMethod = serviceManagerNativeClass.getMethod(
+	                					"asInterface", IBinder.class);
+
+	        Binder tmpBinder = new Binder();
+	        tmpBinder.attachInterface(null, "fake");
+
+	        serviceManagerObject = tempInterfaceMethod.invoke(null, tmpBinder);
+	        IBinder retbinder = (IBinder) getService.invoke(serviceManagerObject, "phone");
+	        Method serviceMethod = telephonyStubClass.getMethod("asInterface", IBinder.class);
+
+	        telephonyObject = serviceMethod.invoke(null, retbinder);
+	        //telephonyCall = telephonyClass.getMethod("call", String.class);
+	        telephonyEndCall = telephonyClass.getMethod("endCall");
+	        //telephonyAnswerCall = telephonyClass.getMethod("answerRingingCall");
+
+	        telephonyEndCall.invoke(telephonyObject);
+
+	    } catch (Exception e) {
+			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
+	    }
+	}
+	
+	
+	/**
+	 * Hangs the call up using the mPhone instance retrieved for 
+	 * precise call state monitoring.
+	 */
+	private void hangupCallHard() {
+		
+	}
 }

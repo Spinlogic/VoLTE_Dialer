@@ -55,30 +55,81 @@ import at.a1.volte_dialer.receiver.ReceiverService;
 public class VDMainActivity extends Activity {
 	private final String TAG = "VDMainActivity";
 	
-	private Thread 		count_thread;
-	private Messenger	mReceiverService = null;
-	final private Messenger	mRsClient = new Messenger(new RSMsgHandler());		// to receive messages from services
+	private Thread 			count_thread;
+	private Messenger		mReceiverService	= null;		// to send messages to ReceiverService
+	private Messenger		mDialerService 		= null;		// to send messages to DialerService
+	final private Messenger	mDsClient 			= new Messenger(new DsMsgHandler());	// to receive messages from DialerService
+	final private Messenger	mRsClient 			= new Messenger(new RsMsgHandler());	// to receive messages from ReceiverService
+	
 	
 	
 	/**
-     * Handler of incoming messages from CallMonitorService
+     * Handler of incoming messages from DialerService
      */
     @SuppressLint("HandlerLeak")
-	class RSMsgHandler extends Handler {
+	class DsMsgHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-        	final String METHOD = "::IncomingMsgHandler::handleMessage()  ";
+        	final String METHOD = "::DsMsgHandler::handleMessage()  ";
             switch (msg.what) {
-                case ReceiverService.MSG_RS_NEWCALLATTEMPT:
-                	Log.i(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
+                case DialerService.MSG_DS_NEWCALLATTEMPT:
+                	Log.i(TAG + METHOD, "MSG_DS_NEWCALLATTEMPT received from DialerService.");
                 	Globals.icallnumber++;
-                	refreshCallNumber();
+                	refreshCallNumber(null);
                     break;
                 default:
                     super.handleMessage(msg);
             }
         }
     }
+	
+	
+	/**
+     * Handler of incoming messages from ReceiverService
+     */
+    @SuppressLint("HandlerLeak")
+	class RsMsgHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+        	final String METHOD = "::RsMsgHandler::handleMessage()  ";
+            switch (msg.what) {
+                case ReceiverService.MSG_RS_NEWCALLATTEMPT:
+                	Log.i(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
+                	Globals.icallnumber++;
+                	refreshCallNumber(null);
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+    
+    
+	private ServiceConnection mDsConnection = new ServiceConnection() {
+			
+	        public void onServiceConnected(ComponentName className, IBinder service) {
+	        	final String METHOD = "::mDsConnection::onServiceConnected()  ";
+	        	mDialerService = new Messenger(service);
+	        	sendMsg(mDialerService, DialerService.MSG_CLIENT_ADDHANDLER, mDsClient);
+	        	Log.i(TAG + METHOD, "Bound to RemoteService");
+	        }
+	
+	        public void onServiceDisconnected(ComponentName className) {
+	            // This is called when the connection with the service has been
+	            // unexpectedly disconnected -- that is, its process crashed.
+	        	mDialerService = null;
+	        	String msg = getString(R.string.str_dsstopped);
+	        	refreshCallNumber(msg);
+	        	// Set button properly
+	        	Globals.is_vd_running = false;
+				Globals.icallnumber	= 0;
+				stopNextCallTimer();
+	    		String btn_text = getString(R.string.btn_start);
+	    		Button button = (Button) findViewById(R.id.startstop_button);
+	    	    button.setText(btn_text);
+	        }
+	    };
+    
     
 	private ServiceConnection mRsConnection = new ServiceConnection() {
 		
@@ -93,6 +144,15 @@ public class VDMainActivity extends Activity {
             // This is called when the connection with the service has been
             // unexpectedly disconnected -- that is, its process crashed.
         	mReceiverService = null;
+        	String msg = getString(R.string.str_rsstopped);
+        	refreshCallNumber(msg);
+        	// Set button properly
+        	Globals.is_vd_running = false;
+			Globals.icallnumber	= 0;
+			stopNextCallTimer();
+    		String btn_text = getString(R.string.btn_start);
+    		Button button = (Button) findViewById(R.id.startstop_button);
+    	    button.setText(btn_text);
         }
     };
 
@@ -124,7 +184,7 @@ public class VDMainActivity extends Activity {
 		}
 		else {
 			if(Globals.is_vd_running) {
-				stopDialerService();
+				unbindDialerService();
 			}
 		}
 		Globals.is_mtc_ongoing = false;
@@ -254,23 +314,13 @@ public class VDMainActivity extends Activity {
 			sendToBg();
 		} 
 		else if(Globals.is_vd_running) {
-			//	The stop process is as follows:
-			//	1. DialService is stopped.
-			//	2a. DialService hangs up the current call, if any.
-			//	2b. DialService stops PhoneStateService.
-			//	2c. DialService stops DialHandler.
-			//	3. DialHandler stop() removes the alarm to trigger new call.
-			//	4. PhoneStateService stops PhoneStateHandler.
-			//	5a. PhoneStateHandler stops PhoneStateReceiver.
-			//	5b. If the app is running in system space, then PhoneStateHandler
-			//      stops PreciseCallStateReceiver.
 			Globals.icallnumber	= 0;
 			stopNextCallTimer();
-			stopDialerService();
+			unbindDialerService();
     		btn_text = getResources().getText(R.string.btn_start).toString();
 		}
 		else {
-			startDialerService();
+			bindDialerService();
     		btn_text = getResources().getText(R.string.btn_stop).toString();
 		}
 		Button button = (Button) findViewById(R.id.startstop_button);
@@ -338,12 +388,18 @@ public class VDMainActivity extends Activity {
         }
     }
     
-    public void refreshCallNumber() {
+    /**
+     * Updates the call number being display.
+     * If a string is provided, the this string is displayed instead.
+     * 
+     * @param msg	message to display. Set to null if the number of calls shall be displayed.
+     */
+    public void refreshCallNumber(final String msg) {
     	if(Globals.mainactivity != null) {
     		Globals.mainactivity.runOnUiThread(new Runnable(){
 				public void run(){
 					TextView tv_callnum = (TextView) findViewById(R.id.callnumber_tv);
-					String txt_callnum = getResources().getText(R.string.str_callnum).toString() + "  " + Integer.toString(Globals.icallnumber);
+					String txt_callnum = (msg != null) ? msg : getString(R.string.str_callnum) + "  " + Integer.toString(Globals.icallnumber);
 					tv_callnum.setText(txt_callnum);
 				}
 			});
@@ -353,9 +409,6 @@ public class VDMainActivity extends Activity {
     public void startNextCallTimer() {
     	final String METHOD = ".updateNextCallTimer()";
     	if(Globals.mainactivity != null) {
-/*	    	final String caption = getString(R.string.str_timetonextcall);
-	    	final String units = getString(R.string.str_seconds);
-	    	final TextView tv_counter = (TextView) findViewById(R.id.counter_tv); */
     		if(count_thread != null) {
     			count_thread = null;	// MUST be stopped
     		}
@@ -364,17 +417,17 @@ public class VDMainActivity extends Activity {
 	    		@Override
 	    		public void run() {
 	                try {
-	                    while (!isInterrupted() && countdown >= 0) {
+	                    while(!isInterrupted() && countdown >= 0) {
 	                        Thread.sleep(1000);
 	                        runOnUiThread(new Runnable() {
 	                            @Override
 	                            public void run() {
 	                            	countdown--;
-	                            	String caption = getString(R.string.str_timetonextcall);
-	                            	String units = getString(R.string.str_seconds);
-	                            	TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
-	                            	String txtcount = caption + " " + Integer.toString(countdown) + " " + units;
-	                            	tv_counter.setText(txtcount);
+		                            String caption = getString(R.string.str_timetonextcall);
+		                            String units = getString(R.string.str_seconds);
+		                            TextView tv_counter = (TextView) findViewById(R.id.counter_tv);
+		                            String txtcount = caption + " " + Integer.toString(countdown) + " " + units;
+		                            tv_counter.setText(txtcount);
 	                            }
 	                        });
 	                    }
@@ -416,20 +469,25 @@ public class VDMainActivity extends Activity {
     }
     
     
-    public void startDialerService() {
+    public void bindDialerService() {
     	if(!Globals.msisdn.isEmpty()) {
     		Globals.is_vd_running = true;
 	    	Intent intent = new Intent(this, DialerService.class);
-			intent.putExtra(ReceiverService.EXTRA_SUFFIX, Globals.msisdn);
+			intent.putExtra(DialerService.EXTRA_MSISDN, Globals.msisdn);
+			intent.putExtra(DialerService.EXTRA_DURATION, Globals.callduration);
+			intent.putExtra(DialerService.EXTRA_WAITTIME, Globals.timebetweencalls);
+			intent.putExtra(DialerService.EXTRA_TMAXSETUP, Globals.max_call_setup_time);
+			intent.putExtra(DialerService.EXTRA_TAVGSETUP, Globals.average_call_setup_time);
 			startService(intent);
+			bindService(intent, mDsConnection, Context.BIND_AUTO_CREATE);
     	}
     }
     
     
-    public void stopDialerService() {
+    public void unbindDialerService() {
     	Globals.is_vd_running = false;
-    	Intent intent = new Intent(this, DialerService.class);
-    	stopService(intent);
+    	unbindService(mDsConnection);
+    	mDialerService = null;
     }
     
     public void newMsisdn() {

@@ -22,30 +22,34 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import at.a1.volte_dialer.CallDescription;
-import at.a1.volte_dialer.Globals;
 
 public class DialerReceiver extends BroadcastReceiver  {
 	public static final String TAG = "DialerReceiver";
+	
+	DsHandlerInterface dsIf;
+	
+	public DialerReceiver() {
+		
+	}
+	
+	public DialerReceiver(DsHandlerInterface ds) {
+		super();
+		dsIf = ds;
+	}
 
     @Override
     public void onReceive(final Context context, Intent intent) {
     	final String METHOD = ":onReceive()  ";
 
-    	if(DialerHandler.isCallOngoing()) {
-    		Log.d(TAG + METHOD, "Terminate call.");
-    		DialerHandler.endCall(CallDescription.CALL_DISCONNECTED_BY_UE);
-    		DialerHandler.setAlarm(context, Globals.timebetweencalls);
-    		if(Globals.mainactivity != null) {
-    			Globals.mainactivity.startNextCallTimer();
-    		}
+    	if(dsIf.dsIf_isCallOngoing()) {
+    		Log.i(TAG + METHOD, "Terminate call.");
+    		dsIf.dsIf_endCall();
+    		dsIf.dsIf_startNextCallTimer();
+    		
     	}
     	else {
-    		Log.d(TAG + METHOD, "Trigger new call.");
-    		DialerHandler.dialCall(context, Globals.msisdn);
-    		if(Globals.mainactivity != null) {
-   			Globals.mainactivity.stopNextCallTimer();
-    		}
+    		Log.i(TAG + METHOD, "Trigger new call.");
+    		dsIf.dsIf_dialCall();
     	}
     }
 	

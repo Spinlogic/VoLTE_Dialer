@@ -19,11 +19,16 @@
 package at.a1.volte_dialer.dialer;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -31,10 +36,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
-import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.callmonitor.CallMonitorService;
-import at.a1.volte_dialer.phonestate.PhoneStateService;
-import at.a1.volte_dialer.phonestate.PreciseCallStateReceiver;
 
 /**
  * This service is used to trigger outgoing calls when
@@ -49,28 +51,51 @@ import at.a1.volte_dialer.phonestate.PreciseCallStateReceiver;
  * @author Juan Noguera
  *
  */
-public class DialerService extends Service {
+public class DialerService extends Service implements DsHandlerInterface {
 	
 	private final String TAG = "DialerService";
 	
+	static final public String INTENT_ACTION_ALARM = "at.a1.volte_dialer.alarm";
+	
 	// Messages to this service from the calling activity
-	static final public int MSG_NEW_CONFIG = 1;
+	static final public int MSG_NEW_CONFIG 			= 1;
+	static final public int MSG_CLIENT_ADDHANDLER 	= 2;
 	
 	// Messages to the activity from this server
-	static final public int MSG_NEW_CALLATTEMPT = 100;	// used to increase call counter
+	static final public int MSG_DS_NEWCALLATTEMPT = 100;	// used to increase call counter
 	
 	// Fields in the binder that the activity passes to this service
 	final static public String EXTRA_MSISDN 	= "msisdn";		// dial string
 	final static public String EXTRA_DURATION	= "duration";	// in seconds
 	final static public String EXTRA_WAITTIME	= "waittime";	// in seconds (time between calls)
+	final static public String EXTRA_TMAXSETUP	= "maxcallsetuptime";	// in seconds (maximum call setup time)
+	final static public String EXTRA_TAVGSETUP	= "avgcallsetuptime";	// in seconds (avarage call setup time)
+	
+	// default values
+	final static private int DEF_TMAXSETUP	= 30;	// disconnect if the call is not connected within this time
+	final static private int DEF_TAVGSETUP	= 10;	// add this value to the call duration if no access to precise call events
+	
+	// local Call States
+	final static private int STATE_IDLE		= 1000;
+	final static private int STATE_DIALING	= 1001;
+	final static private int STATE_ACTIVE	= 1002;
 
-	private Messenger mCms;		// provided by CallMonitorService to this service
-	final Messenger mClient;	// provided by this service to CallMonitorService
-	final Messenger mServer;	// provided by this service to the calling activity
-	
-	public static DialerHandler hdialer;
-	
+	final Messenger 	mCmsClient;		// provided by this service to CallMonitorService
+	private Messenger 	mCmsServer;		// provided by CallMonitorService to this service
+	final Messenger 	mDsServer;		// provided by this service to the calling activity
+	private Messenger 	mDsClient;		// provided by the calling activity to this service
+		
 	private boolean is_inservice;
+	private boolean is_system;			// is CallMonitor running as system process
+	private boolean is_dismissed;		// is this service being destroyed?
+	
+	private int				callstate;
+	private String 			msisdn;
+	private int 			duration;		
+	private int 			waittime;
+	private int 			maxsetup;
+	private int 			avgsetup;
+	private DialerReceiver  mDialerReceiver;
 	
 	/**
      * Handler of incoming messages from CallMonitorService
@@ -81,17 +106,29 @@ public class DialerService extends Service {
         public void handleMessage(Message msg) {
         	final String METHOD = "::CmsHandler::handleMessage()  ";
             switch (msg.what) {
-                case CallMonitorService.MSG_SERVER_OUTCALL_START:
-                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_START received from CallMonitorService.");
-                	// TODO: start call duration timer
+                case CallMonitorService.MSG_SERVER_OUTCALL_DIALING:
+                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_DIALING received from CallMonitorService.");
+                	callstate = (is_system) ? STATE_DIALING : STATE_ACTIVE;
+                	sendMsg(mDsClient, MSG_DS_NEWCALLATTEMPT, null);
                     break;
+                case CallMonitorService.MSG_SERVER_OUTCALL_ACTIVE:	// only received if is_system
+                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_ACTIVE received from CallMonitorService.");
+                		// stop the next call timer
+                		stopAlarms();
+                		// start the call timer
+                		setAlarm((long) duration);
+                	break;
                 case CallMonitorService.MSG_SERVER_OUTCALL_END:
                 	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_END received from CallMonitorService.");
-                	// TODO: start time between calls timer
+                	callstate = STATE_IDLE;
+                	if(!is_dismissed) {
+                		setAlarm((long) waittime);	// set the timer for the next call
+                	}
                     break;
                 case CallMonitorService.MSG_SERVER_STATE_INSERVICE:
                 	Log.i(TAG + METHOD, "MSG_SERVER_STATE_INSERVICE received from CallMonitorService.");
                 	if(!is_inservice) {
+                		// This is the first message that DialerService gets from CallMonitorService.
                 		startDialingLoop();
                 	}
                 	is_inservice = true;
@@ -102,8 +139,11 @@ public class DialerService extends Service {
                 		stopDialingLoop();
                 	}
                 	is_inservice = false;
-                	// TODO: stop hdialer, if started
                     break;
+                case CallMonitorService.MSG_SERVER_SYSTEMPROCESS:
+                	Log.i(TAG + METHOD, "MSG_SERVER_SYSTEMPROCESS received from CallMonitorService.");
+                	is_system = true;
+                	break;
                 default:
                     super.handleMessage(msg);
             }
@@ -125,17 +165,21 @@ public class DialerService extends Service {
                 	Bundle bundle = msg.getData();
                 	String newmsisdn = bundle.getString(EXTRA_MSISDN);
                 	if(newmsisdn != null) {
-                		hdialer.setMsisdn(newmsisdn);
+                		msisdn = newmsisdn;
                 	}
                 	Integer newduration = bundle.getInt(EXTRA_DURATION);
                 	if(newduration != null) {
-                		hdialer.setCallDuration(newduration);
+                		duration = newduration;
                 	}
                 	Integer newwt = bundle.getInt(EXTRA_WAITTIME);
                 	if(newwt != null) {
-                		hdialer.setTimeBetweenCalls(newwt);
+                		waittime = newwt;
                 	}
                     break;
+                case MSG_CLIENT_ADDHANDLER:
+                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+                	mDsClient = msg.replyTo;
+                	break;
                 default:
                     super.handleMessage(msg);
             }
@@ -146,74 +190,59 @@ public class DialerService extends Service {
 		
         public void onServiceConnected(ComponentName className, IBinder service) {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
-        	mCms = new Messenger(service);
-            sendMsg(CallMonitorService.MSG_CLIENT_ADDHANDLER, mClient);
+        	mCmsServer = new Messenger(service);
+            sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ADDHANDLER, mCmsClient);
             Log.i(TAG + METHOD, "Bound to CallMonitorService");
-            if(is_inservice) {
-            	startDialingLoop();
-            }
-            Log.i(TAG + METHOD, "dialing loop started");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
-        	mCms = null;
+        	mCmsServer = null;
             Log.d(TAG + METHOD, "Unbound to CallMonitorService");
         }
     };
 	
 	public DialerService() {
+		callstate		= STATE_IDLE;
+		is_system		= false;
 		is_inservice 	= false;
-		hdialer 		= new DialerHandler();
-		mClient 		= new Messenger(new CmsHandler());
-		mServer 		= new Messenger(new IncomingHandler());
-	}
-	
-/*	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		final String METHOD = "::onStartCommand()  ";
+		is_dismissed	= false;
+		msisdn			= "";
+		duration		= 20;		
+		waittime		= 20;
+		maxsetup		= DEF_TMAXSETUP;
+		avgsetup		= DEF_TAVGSETUP;
 		
-		// start the PhoneStateService
-		Intent psintent = new Intent(this, PhoneStateService.class);
-		startService(psintent);
-		// start dialing loop
-		hdialer = new DialerHandler();
-		hdialer.start(this);
-		Log.d(TAG + METHOD, "service started");
-		int res = super.onStartCommand(intent, flags, startId);
-		return res;
-	}  */
+		mCmsServer		= null;
+		mCmsClient 		= new Messenger(new CmsHandler());
+		mDsClient		= null;
+		mDsServer 		= new Messenger(new IncomingHandler());
+	}
+
 		
 	@Override
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
+		is_dismissed = true;
 		final Context context = getApplicationContext();
-		if(DialerHandler.isCallOngoing()) {
-			if(Globals.is_running_as_system) {
-				PreciseCallStateReceiver.hangupCall();
-			}
-			else {
-				Globals.hangupCall(); // Disconnect any call that is still ongoing
-			}
+		if(callstate != STATE_IDLE) {
+			sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ENDCALL, null);
 		}
+		// stop dialing loop (MSG_SERVER_OUTCALL_END hopefully processed)
+		stopAlarms();
+		unregisterReceiver(mDialerReceiver);
 		// Give some time to log the last call. In case there was one ongoing
 		Handler h = new Handler();
 		h.postDelayed(new Runnable() {
 			public void run() {
-				// stop the PhoneStateService
-				Intent psintent = new Intent(context, PhoneStateService.class);
-				stopService(psintent);
-				// stop dialing loop
-				hdialer.stop(context);
+				if(mCmsServer != null) {
+		            unbindService(mConnection);
+		            mCmsServer = null;
+		            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
+		        }
 				Log.d(TAG + METHOD, "service destroyed");
 			}
-		}, 1000);
-		if(mCms != null) {
-            unbindService(mConnection);
-            mCms = null;
-            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
-        }
-		Log.i(TAG + METHOD, "service stopped");
+		}, 1000);	
 		super.onDestroy();
 	}
 
@@ -222,33 +251,38 @@ public class DialerService extends Service {
     public IBinder onBind(Intent intent) {
 		final String METHOD = "::onBind()  ";
 		
-		if(intent.hasExtra(EXTRA_MSISDN)	|| 
-		   intent.hasExtra(EXTRA_DURATION)	|| 
-		   intent.hasExtra(EXTRA_WAITTIME)) {
+		if(!intent.hasExtra(EXTRA_MSISDN)	|| 
+		   !intent.hasExtra(EXTRA_DURATION)	|| 
+		   !intent.hasExtra(EXTRA_WAITTIME)) {
 			return null;	// The three parameters must be provided to bind
 		}
-    	hdialer.setMsisdn(intent.getStringExtra(EXTRA_MSISDN));
-    	hdialer.setCallDuration(intent.getIntExtra(EXTRA_DURATION, 20));
-    	hdialer.setTimeBetweenCalls(intent.getIntExtra(EXTRA_WAITTIME, 20));
-		
+    	msisdn		= intent.getStringExtra(EXTRA_MSISDN);
+    	duration	= intent.getIntExtra(EXTRA_DURATION, 20);
+    	waittime	= intent.getIntExtra(EXTRA_WAITTIME, 20);
+    	maxsetup	= intent.getIntExtra(EXTRA_TMAXSETUP, DEF_TMAXSETUP);
+		avgsetup	= intent.getIntExtra(EXTRA_TAVGSETUP, DEF_TAVGSETUP);
+    	
+    	
 		// start the CallMonitorService
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MO);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
 		Log.d(TAG + METHOD, "Binding to CallMonitorService");
+		
+		registerDialerReceiver();
 				
-		return mServer.getBinder();
+		return mDsServer.getBinder();
 	}
 	
 	
 	private void startDialingLoop() {
 		 // Start dialing loop
-		hdialer.start(this);
+		dialCall(msisdn);
 	}
 	
 	private void stopDialingLoop() {
 		 // Start dialing loop
-		hdialer.stop(this);
+		stopAlarms();
 	}
 	
 	
@@ -257,19 +291,130 @@ public class DialerService extends Service {
 	 * by the client, if any.
 	 * @param what
 	 */
-	public void sendMsg(int what, Messenger messenger) {
+	public void sendMsg(Messenger toMsgr, int what, Messenger rplyToMsgr) {
 		final String METHOD = "::sendMsg()  ";
 		
 		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 		Message msg = Message.obtain(null, what, 0, 0);
-		if(messenger != null) {
-			msg.replyTo = messenger;
+		if(rplyToMsgr != null) {
+			msg.replyTo = rplyToMsgr;
 		}
 		try {
-			mCms.send(msg);
+			toMsgr.send(msg);
 			Log.i(TAG + METHOD, "Message sent to client.");
 		} catch (RemoteException e) {
 			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
 		}
 	}
+	
+	
+	// INTERFACE DsHandlerInterface 
+	
+	public boolean dsIf_isCallOngoing() {
+		return (callstate != STATE_IDLE) ? true : false;
+	}
+	
+	public void dsIf_endCall() {
+		sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ENDCALL, null);
+	}
+	
+	/**
+	 * sets an Alarm to go off in waittime seconds from current time.
+	 * 
+	 * @param waittime		in seconds
+	 */
+	@SuppressLint("NewApi")
+	public void setAlarm(long waittime) {
+		final String METHOD = "::setAlarm()  ";
+		Intent alarmIntent = new Intent(this, DialerReceiver.class);
+		alarmIntent.setAction(INTENT_ACTION_ALARM);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+		if (currentapiVersion >= android.os.Build.VERSION_CODES.KITKAT){
+			alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+		} else{
+			alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
+		}
+		Log.i(TAG + METHOD, "ALARM will go off in " + Long.toString(waittime * 1000));
+	}
+	
+	
+	public void stopAlarms() {
+		final String METHOD = "::stopAlarms()  ";
+		Intent alarmIntent = new Intent(this, DialerReceiver.class);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		alarmManager.cancel(pendingIntent);
+		Log.i(TAG + METHOD, "All timers have been stopped.");
+	}
+	
+	public void dsIf_dialCall() {
+		dialCall(msisdn);
+	}
+	
+	public void dsIf_startNextCallTimer() {
+		setAlarm((long) waittime);
+	}
+	
+	
+	public void dialCall(final String telnum) {
+		final String METHOD = "::dialCall()  ";
+		
+		Handler h = new Handler();
+		h.postDelayed(new Runnable() {
+			public void run() {
+				Intent intent = new Intent(Intent.ACTION_CALL);
+				intent.setData(Uri.parse("tel:" + telnum));
+				intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+				startActivity(intent);
+				Log.d(TAG + METHOD, "Calling " + telnum);
+				
+				// Activate an alarm to end the call
+				if(is_system) {
+					setAlarm((long) maxsetup);
+				}
+				else {
+					setAlarm((long) (avgsetup + duration));
+				}
+				callstate = STATE_DIALING;
+			}
+		}, 500);	// Works better if the call is trigger after some delay
+	
+	}	
+
+	
+	// BROADCAST RECEIVER FOR TIMER
+	
+	
+	private void registerDialerReceiver() {
+		IntentFilter filter = new IntentFilter();
+        filter.addAction(INTENT_ACTION_ALARM);
+        mDialerReceiver = new DialerReceiver();
+        registerReceiver(mDialerReceiver, filter);
+	}
+	
+	public class DialerReceiver extends BroadcastReceiver  {
+		public static final String TAG = "DialerReceiver";
+		
+
+	    @Override
+	    public void onReceive(final Context context, Intent intent) {
+	    	final String METHOD = ":onReceive()  ";
+
+	    	if(dsIf_isCallOngoing()) {
+	    		Log.i(TAG + METHOD, "Terminate call.");
+	    		dsIf_endCall();
+	    		dsIf_startNextCallTimer();
+	    		
+	    	}
+	    	else {
+	    		Log.i(TAG + METHOD, "Trigger new call.");
+	    		dsIf_dialCall();
+	    	}
+	    }
+		
+	}
+
+	
 }

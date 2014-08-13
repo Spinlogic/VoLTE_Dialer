@@ -114,7 +114,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
  				if(Globals.is_vd_running) {
  					Globals.mainactivity.stopNextCallTimer();
 	 				// stop the service that is establishing calls
- 					Globals.mainactivity.stopDialerService();
+ 					Globals.mainactivity.unbindDialerService();
  				}
  				Globals.mainactivity.bindReceiverService();
  			}
@@ -146,7 +146,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         	if(Globals.is_vd_running) {	// stop running instance
     			Globals.icallnumber	= 0;
     			Globals.mainactivity.stopNextCallTimer();
-    			Globals.mainactivity.stopDialerService();
+    			Globals.mainactivity.unbindDialerService();
         	}
         	if(sharedPreferences.getBoolean(key, false)) {	// BG mode activated
         		if(Globals.opmode == Globals.OPMODE_MT){

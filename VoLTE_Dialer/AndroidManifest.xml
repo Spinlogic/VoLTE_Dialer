@@ -40,7 +40,7 @@
         </activity>
         
         <!-- Dialer package -->
-        <receiver android:name="at.a1.volte_dialer.dialer.DialerReceiver" />
+	    <receiver android:name="at.a1.volte_dialer.dialer.DialerReceiver" />
         <service android:name="at.a1.volte_dialer.dialer.DialerService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />

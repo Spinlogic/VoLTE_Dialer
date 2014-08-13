@@ -25,9 +25,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import at.a1.volte_dialer.CallDescription;
 import at.a1.volte_dialer.Globals;
-import at.a1.volte_dialer.dialer.DialerHandler;
 
 
 /**
@@ -146,7 +144,7 @@ public class PreciseCallStateReceiver {
 				Object eCallStates[] = cCallState.getEnumConstants();
 				
 				if(eCallStates != null) {
-					if(oCallstate == eCallStates[0]) { // IDLE
+/*					if(oCallstate == eCallStates[0]) { // IDLE
 						if(DialerHandler.isCallOngoing()) {
 							// The call has been disconnected by the network.
 							// Stop pending alarms to terminate the call from UE side.
@@ -173,7 +171,7 @@ public class PreciseCallStateReceiver {
 							String disconnectioncause = getDisconnectCause(cCall, oCall);
 							DialerHandler.setDisconnectionCause(disconnectioncause);
 						}
-					}
+					} */
 				}
 			} catch (ClassNotFoundException e) {
 				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());

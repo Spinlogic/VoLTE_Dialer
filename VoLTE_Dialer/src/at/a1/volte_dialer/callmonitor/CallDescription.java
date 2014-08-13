@@ -35,7 +35,6 @@ import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 import android.util.Log;
-import at.a1.volte_dialer.phonestate.PhoneStateReceiver;
 
 public class CallDescription {
 	
