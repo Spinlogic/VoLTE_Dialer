@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Stack;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.ComponentName;
@@ -32,6 +33,7 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
@@ -46,6 +48,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import at.a1.volte_dialer.callmonitor.CallMonitorService;
 import at.a1.volte_dialer.dialer.DialerService;
 import at.a1.volte_dialer.receiver.ReceiverService;
 
@@ -54,12 +57,36 @@ public class VDMainActivity extends Activity {
 	
 	private Thread 		count_thread;
 	private Messenger	mReceiverService = null;
+	final private Messenger	mRsClient = new Messenger(new RSMsgHandler());		// to receive messages from services
 	
 	
+	/**
+     * Handler of incoming messages from CallMonitorService
+     */
+    @SuppressLint("HandlerLeak")
+	class RSMsgHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+        	final String METHOD = "::IncomingMsgHandler::handleMessage()  ";
+            switch (msg.what) {
+                case ReceiverService.MSG_RS_NEWCALLATTEMPT:
+                	Log.i(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
+                	Globals.icallnumber++;
+                	refreshCallNumber();
+                    break;
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+    
 	private ServiceConnection mRsConnection = new ServiceConnection() {
 		
         public void onServiceConnected(ComponentName className, IBinder service) {
+        	final String METHOD = "::mRsConnection::onServiceConnected()  ";
         	mReceiverService = new Messenger(service);
+        	sendMsg(mReceiverService, ReceiverService.MSG_CLIENT_ADDHANDLER, mRsClient);
+        	Log.i(TAG + METHOD, "Bound to RemoteService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -427,6 +454,30 @@ public class VDMainActivity extends Activity {
     		// Dialer service case
     	}
     }
+    
+	/**
+	 * Sends a message to the RemoteService or the DialingService.
+	 * Includes a reply-to Messenger that the RemoteService / DialingService shall use
+	 * to communicate with this activity.
+	 * 
+	 * @param what
+	 * @param messenger
+	 */
+	public void sendMsg(Messenger toMsgr, int what, Messenger plyToMsgr) {
+		final String METHOD = "::sendMsg()  ";
+		
+		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+		Message msg = Message.obtain(null, what, 0, 0);
+		if(plyToMsgr != null) {
+			msg.replyTo = plyToMsgr;
+		}
+		try {
+			toMsgr.send(msg);
+			Log.i(TAG + METHOD, "Message sent to client.");
+		} catch (RemoteException e) {
+			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+		}
+	}
     
     private void sendToBg() {
     	Intent i = new Intent();

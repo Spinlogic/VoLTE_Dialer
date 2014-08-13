@@ -50,14 +50,17 @@ public class CallMonitorService extends Service {
 //	final static public String EXTRA_CLIENTMSGR 	= "client";		// binder to the client
 	final static public String EXTRA_OPMODE 		= "opmode";		
 	
-	// Messages that this service can receive from clients
+	// Messages from clients to this
 	public static final int MSG_CLIENT_DISCONNECT 	= 1;	// The client has disconnected the call
-	public static final int MSG_CLIENT_ADDHANDLER 	= 2;
+	public static final int MSG_CLIENT_ADDHANDLER 	= 2;	// Add the messenger to send messages to client
+	public static final int MSG_CLIENT_ENDCALL 		= 3;	// Hangup ongoing call
 	
-	// Messages that this service passes to the clients
+	// Messages from this service to clients
 	public static final int MSG_SERVER_STATE_INSERVICE	= 0;	// The service state is STATE_IN_SERVICE
 	public static final int MSG_SERVER_STATE_OUTSERVICE	= 1;	// The service state is STATE_EMERGENCY_ONLY, STATE_OUT_OF_SERVICE or STATE_POWER_OFF
-	public static final int MSG_SERVER_INCOMING_CALL	= 2;	
+	public static final int MSG_SERVER_INCOMING_CALL	= 2;
+	public static final int MSG_SERVER_OUTCALL_START	= 3;
+	public static final int MSG_SERVER_OUTCALL_END		= 4;
 	
 	// Operation modes
 	public static final int OPMODE_BG = 100;		// Background
@@ -274,8 +277,11 @@ public class CallMonitorService extends Service {
 	private void activateReceivers() {
 		mCallMonitorReceiver = new CallMonitorReceiver(this);
 		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		int mflags = PhoneStateListener.LISTEN_SIGNAL_STRENGTHS | 
-					 PhoneStateListener.LISTEN_SERVICE_STATE;
+		
+		int mflags = PhoneStateListener.LISTEN_SIGNAL_STRENGTHS;
+		if(opmode != OPMODE_MT) {
+			mflags |= PhoneStateListener.LISTEN_SERVICE_STATE;
+		}
 		if(!is_system) {
 			mflags |= PhoneStateListener.LISTEN_CALL_STATE;
 		}
@@ -293,7 +299,7 @@ public class CallMonitorService extends Service {
 	}
 	
 	
-	   /**
+	/**
      * Determines whether the app is running in system or user space
      * 
      * @return	true	App is running in system space

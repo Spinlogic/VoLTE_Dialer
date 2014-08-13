@@ -43,17 +43,28 @@ public class DialerHandler {
 	private static final String TAG = "DialerHandler";
 	private static CallDescription calldescription;
 	
+	// default values
+	String msisdn = "";
+	int duration = 20;		
+	int waittime = 20;
+	
 	
 	// PUBLIC METHODS
 	
+	public void setMsisdn(String telnum) {
+		msisdn = telnum;
+	}
+	
+	public void setCallDuration(int cd) {
+		duration = cd;
+	}
+	
+	public void setTimeBetweenCalls(int tbc) {
+		waittime = tbc;
+	}
+	
 	public void start(final Context context) {
-		Handler h = new Handler();
-		h.postDelayed(new Runnable() {
-			public void run() {
-			dialCall(context, Globals.msisdn);
-			}
-		}, 2000);	// Give a couple of seconds for PhoneStateHandler to 
-					// find ServiceState
+		dialCall(context, msisdn);
 	}
 	
 	public static void stop(final Context context) {
@@ -100,33 +111,27 @@ public class DialerHandler {
 	public static void dialCall(final Context c, final String msisdn) {
 		final String METHOD = "::dialCall()  ";
 		
-		if(Globals.iservicestate == ServiceState.STATE_IN_SERVICE) {
-			Handler h = new Handler();
-			h.postDelayed(new Runnable() {
-				public void run() {
-					DialerHandler.calldescription = new CallDescription(c);
-					Intent intent = new Intent(Intent.ACTION_CALL);
-					intent.setData(Uri.parse("tel:" + msisdn));
-					intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
-					c.startActivity(intent);
-					Globals.icallnumber++;	// increment call counter
-					Log.d(TAG + METHOD, "Calling " + msisdn);
-					
-					// Activate an alarm to end the call
-					if(Globals.is_running_as_system) {
-						setAlarm(c, Globals.max_call_setup_time);
-					}
-					else {
-						setAlarm(c, Globals.average_call_setup_time + Globals.callduration);	// TODO: the alarm should be set when the call is established
-					}
+		Handler h = new Handler();
+		h.postDelayed(new Runnable() {
+			public void run() {
+				DialerHandler.calldescription = new CallDescription(c);
+				Intent intent = new Intent(Intent.ACTION_CALL);
+				intent.setData(Uri.parse("tel:" + msisdn));
+				intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+				c.startActivity(intent);
+//				Globals.icallnumber++;	// increment call counter
+				Log.d(TAG + METHOD, "Calling " + msisdn);
+				
+				// Activate an alarm to end the call
+				if(Globals.is_running_as_system) {
+					setAlarm(c, Globals.max_call_setup_time);
 				}
-			}, 500);	// Works better if the call is trigger after some delay
-		}
-		else {
-			// wait 10 seconds and try again
-			calldescription = null;
-			setAlarm(c, 10);
-		}
+				else {
+					setAlarm(c, Globals.average_call_setup_time + Globals.callduration);	// TODO: the alarm should be set when the call is established
+				}
+			}
+		}, 500);	// Works better if the call is trigger after some delay
+	
 	}
 	
 	/**

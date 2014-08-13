@@ -51,8 +51,13 @@ public class ReceiverService extends Service {
 	
 	private final static String TAG = "ReceiverService";
 	
-	// Messages to this service
-	static final public int MSG_NEW_SUFFIX = 1;
+	// Messages to this service from the calling activity
+	static final public int MSG_NEW_SUFFIX 			= 1;
+	static final public int MSG_CLIENT_ADDHANDLER 	= 2;
+	
+
+	// Messages from this service to the calling activity
+	static final public int MSG_RS_NEWCALLATTEMPT = 50;
 	
 	// Extras defined for this service
 	final static public String EXTRA_SUFFIX = "suffix";
@@ -60,11 +65,11 @@ public class ReceiverService extends Service {
 	private String suffix;
 	
 	
-	private Messenger mCms;		// provided by CallMonitorService to this service
-	final Messenger mClient;	// provided by client (this service) to server (CallMonitorService)
-	final Messenger mServer;	// provided by this service to the calling activity
+	private Messenger mCms;			// provided by CallMonitorService to this service
+	final Messenger mClient;		// provided by this service to CallMonitorService
+	private Messenger mAcServer;	// provided by this service to the calling activity
+	final Messenger mAcClient;		// provided by the calling activity to this service
 	
-	boolean mBound;
 	
 	/**
      * Handler of incoming messages from CallMonitorService
@@ -76,11 +81,13 @@ public class ReceiverService extends Service {
         	final String METHOD = "::CmsHandler::handleMessage()  ";
             switch (msg.what) {
                 case CallMonitorService.MSG_SERVER_INCOMING_CALL:
-                	Log.i(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from server.");
+                	Log.i(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
                 	Bundle srv_data = msg.getData();
                 	String msisdn = srv_data.getString(CallMonitorService.EXTRA_MTC_MSISDN);
+                	Log.i(TAG + METHOD, "MSISDN: " + msisdn);
                 	if(msisdn != null) {
                 		if(msisdn.endsWith(suffix)) {
+                			sendMsg(mAcClient, MSG_RS_NEWCALLATTEMPT, null);
                 			answerCall();
                 		}
                 	}
@@ -115,6 +122,10 @@ public class ReceiverService extends Service {
                 		Log.i(TAG + METHOD, "ERROR null suffix received.");
                 	}
                     break;
+                case MSG_CLIENT_ADDHANDLER:
+                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+                	mAcServer = msg.replyTo;
+                	break;
                 default:
                     super.handleMessage(msg);
             }
@@ -123,11 +134,11 @@ public class ReceiverService extends Service {
     
 	
 	public ReceiverService() {
-		suffix	= "";
-		mCms	= null;
-		mBound	= false;
-		mClient = new Messenger(new CmsHandler());
-		mServer = new Messenger(new IncomingHandler());
+		suffix		= "";
+		mCms		= null;
+		mAcClient	= null;
+		mClient 	= new Messenger(new CmsHandler());
+		mAcServer 	= new Messenger(new IncomingHandler());
 	}
 	
 	
@@ -136,15 +147,13 @@ public class ReceiverService extends Service {
         public void onServiceConnected(ComponentName className, IBinder service) {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
         	mCms = new Messenger(service);
-            mBound = true;
-            sendMsg(CallMonitorService.MSG_CLIENT_ADDHANDLER, mClient);
-            Log.d(TAG + METHOD, "Binding to CallMonitorService");
+            sendMsg(mCms, CallMonitorService.MSG_CLIENT_ADDHANDLER, mClient);
+            Log.i(TAG + METHOD, "Bound to CallMonitorService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
         	mCms = null;
-            mBound = false;
             Log.d(TAG + METHOD, "Unbound to CallMonitorService");
         }
     };
@@ -177,11 +186,12 @@ public class ReceiverService extends Service {
 			Globals.hangupCall();	// No need to check whether it is in system space.
 			Globals.is_mtc_ongoing = false;
 		}
-		if(mBound) {
+		if(mCms != null) {
             unbindService(mConnection);
-            mBound = false;
+            mCms = null;
+            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
         }
-		Log.d(TAG + METHOD, "service stopped");
+		Log.i(TAG + METHOD, "service stopped");
 	}
 
 	
@@ -193,31 +203,34 @@ public class ReceiverService extends Service {
 			suffix = intent.getStringExtra(EXTRA_SUFFIX);
 		}
 		
-		// start the PhoneStateService
+		// start the CallMonitorService
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MT);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
 		Log.d(TAG + METHOD, "Binding to CallMonitorService");
 		
-		return mServer.getBinder();
+		return mAcServer.getBinder();
 	}
 	
 	
 	/**
-	 * Sends a message to the client via the Messenger object provided 
-	 * by the client, if any.
+	 * Sends a message to the CallMonitorService.
+	 * Includes a reply-to Messenger that the CallMonitorService shall use
+	 * to communicate with this service.
+	 * 
 	 * @param what
+	 * @param messenger
 	 */
-	public void sendMsg(int what, Messenger messenger) {
+	public void sendMsg(Messenger fromMsgr, int what, Messenger rplyToMsgr) {
 		final String METHOD = "::sendMsg()  ";
 		
 		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 		Message msg = Message.obtain(null, what, 0, 0);
-		if(messenger != null) {
-			msg.replyTo = messenger;
+		if(rplyToMsgr != null) {
+			msg.replyTo = rplyToMsgr;
 		}
 		try {
-			mCms.send(msg);
+			fromMsgr.send(msg);
 			Log.i(TAG + METHOD, "Message sent to client.");
 		} catch (RemoteException e) {
 			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
