@@ -22,7 +22,6 @@ import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -62,7 +61,8 @@ public class DialerService extends Service implements DsHandlerInterface {
 	static final public int MSG_CLIENT_ADDHANDLER 	= 2;
 	
 	// Messages to the activity from this server
-	static final public int MSG_DS_NEWCALLATTEMPT = 100;	// used to increase call counter
+	static final public int MSG_DS_NEWCALLATTEMPT 	= 100;	// used to increase call counter
+	static final public int MSG_DS_CALLENDED 		= 101;	// call has been released
 	
 	// Fields in the binder that the activity passes to this service
 	final static public String EXTRA_MSISDN 	= "msisdn";		// dial string
@@ -95,7 +95,6 @@ public class DialerService extends Service implements DsHandlerInterface {
 	private int 			waittime;
 	private int 			maxsetup;
 	private int 			avgsetup;
-	private DialerReceiver  mDialerReceiver;
 	
 	/**
      * Handler of incoming messages from CallMonitorService
@@ -122,6 +121,7 @@ public class DialerService extends Service implements DsHandlerInterface {
                 	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_END received from CallMonitorService.");
                 	callstate = STATE_IDLE;
                 	if(!is_dismissed) {
+                		sendMsg(mDsClient, MSG_DS_CALLENDED, null);
                 		setAlarm((long) waittime);	// set the timer for the next call
                 	}
                     break;
@@ -224,26 +224,37 @@ public class DialerService extends Service implements DsHandlerInterface {
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
 		is_dismissed = true;
-		final Context context = getApplicationContext();
+		final Context context = this;
 		if(callstate != STATE_IDLE) {
 			sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ENDCALL, null);
 		}
-		// stop dialing loop (MSG_SERVER_OUTCALL_END hopefully processed)
-		stopAlarms();
-		DialerReceiver.dsIf = null;
-//		unregisterReceiver(mDialerReceiver);
 		// Give some time to log the last call. In case there was one ongoing
 		Handler h = new Handler();
-		h.postDelayed(new Runnable() {
+		stopAlarms();
+		DialerReceiver.dsIf = null;
+		if(mCmsServer != null) {
+            unbindService(mConnection);
+            Intent monintent = new Intent(context, CallMonitorService.class);
+            stopService(monintent);
+            mCmsServer = null;
+            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
+        }
+		Log.d(TAG + METHOD, "service destroyed");
+/*		h.postDelayed(new Runnable() {
 			public void run() {
+				// stop dialing loop (MSG_SERVER_OUTCALL_END hopefully processed)
+				stopAlarms();
+				DialerReceiver.dsIf = null;
 				if(mCmsServer != null) {
-		            unbindService(mConnection);
+//		            unbindService(mConnection);
+		            Intent monintent = new Intent(context, CallMonitorService.class);
+		            stopService(monintent);
 		            mCmsServer = null;
 		            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
 		        }
 				Log.d(TAG + METHOD, "service destroyed");
 			}
-		}, 1000);	
+		}, 1000); */	
 		super.onDestroy();
 	}
 
@@ -263,16 +274,12 @@ public class DialerService extends Service implements DsHandlerInterface {
     	maxsetup	= intent.getIntExtra(EXTRA_TMAXSETUP, DEF_TMAXSETUP);
 		avgsetup	= intent.getIntExtra(EXTRA_TAVGSETUP, DEF_TAVGSETUP);
     	
-    	
 		// start the CallMonitorService
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MO);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
 		Log.d(TAG + METHOD, "Binding to CallMonitorService");
-		
-//		registerDialerReceiver();
 		DialerReceiver.dsIf = this;
-		
 		return mDsServer.getBinder();
 	}
 	
@@ -380,18 +387,5 @@ public class DialerService extends Service implements DsHandlerInterface {
 		}, 500);	// Works better if the call is trigger after some delay
 	
 	}	
-
-	
-	// BROADCAST RECEIVER FOR TIMER
-	
-	
-	private void registerDialerReceiver() {
-		IntentFilter filter = new IntentFilter();
-        filter.addAction(INTENT_ACTION_ALARM);
-        mDialerReceiver = new DialerReceiver();
- //       mDialerReceiver.setDs(this);
-        registerReceiver(mDialerReceiver, filter);
-	}
-
 	
 }

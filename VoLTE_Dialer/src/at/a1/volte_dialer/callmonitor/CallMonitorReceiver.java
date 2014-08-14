@@ -27,35 +27,35 @@ public class CallMonitorReceiver extends PhoneStateListener {
 	private static final String TAG = "CallMonitorReceiver";
 	
 	public static int signalstrength;
-	CallMonitorService	mCms;
+	CallMonitorInterface	mCmIf;
 	
-	public CallMonitorReceiver(CallMonitorService cms) {
+	public CallMonitorReceiver(CallMonitorService cmif) {
 		signalstrength	= 99;	// = Unknown. Values in 3GPP TS27.007
-		mCms 			= cms;
+		mCmIf 			= cmif;
 	}
 	
 	@Override
     public void onServiceStateChanged(ServiceState serviceState) {
 		super.onServiceStateChanged(serviceState);
 		int state = serviceState.getState();
-		int msgwhat = CallMonitorService.MSG_SERVER_STATE_OUTSERVICE;
+		int cmState = CallMonitorService.MSG_SERVER_STATE_OUTSERVICE;
 		if(state == ServiceState.STATE_IN_SERVICE) {
-			msgwhat = CallMonitorService.MSG_SERVER_STATE_INSERVICE;
+			cmState = CallMonitorService.MSG_SERVER_STATE_INSERVICE;
 		}
-		mCms.sendMsg(msgwhat, null);
+		mCmIf.csmif_ServiceState(cmState);
 	}
 	
 	@Override
 	public void onCallStateChanged(int state, String incomingNumber) {
 		switch(state) {
 			case TelephonyManager.CALL_STATE_IDLE:
-				mCms.endCall(signalstrength);
+				mCmIf.endCall(signalstrength);
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
-				mCms.startCall(CallDescription.MT_CALL, incomingNumber);
+				mCmIf.startCall(CallDescription.MT_CALL, incomingNumber);
 				break;
 			case TelephonyManager.CALL_STATE_OFFHOOK:
-				mCms.startCall(CallDescription.MO_CALL, incomingNumber);
+				mCmIf.startCall(CallDescription.MO_CALL, incomingNumber);
 				break;
 		}
 	}

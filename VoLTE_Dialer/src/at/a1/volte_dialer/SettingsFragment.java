@@ -156,6 +156,7 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         		// Activate bg call monitoring
         		Globals.opmode = Globals.OPMODE_BG;
         		Intent cms = new Intent(getActivity(), CallMonitorService.class);
+        		cms.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_BG);
         		getActivity().startService(cms);
         	} else {	// BG mode deactivated
         		// deactivate bg call monitoring

@@ -46,7 +46,7 @@ import android.util.Log;
  * @author Juan Noguera
  *
  */
-public class CallMonitorService extends Service {
+public class CallMonitorService extends Service implements CallMonitorInterface {
 	private static final String TAG = "CallMonitorService";
 	
 	// Extras for the intent create by the client
@@ -65,6 +65,16 @@ public class CallMonitorService extends Service {
 	public static final int MSG_SERVER_OUTCALL_ACTIVE	= 4;
 	public static final int MSG_SERVER_OUTCALL_END		= 5;
 	public static final int MSG_SERVER_SYSTEMPROCESS	= 6;	// sent to client if this service is running in the system process
+	
+	// Call States
+	final static private int CALLSTATE_IDLE				= 1000;
+	final static private int CALLSTATE_OFFHOOK			= 1001;
+	final static private int CALLSTATE_DIALING			= 1002;
+	final static private int CALLSTATE_RINGING			= 1003;
+	final static private int CALLSTATE_ACTIVE			= 1004;
+	final static private int CALLSTATE_DISCONNECTING	= 1005;
+	final static private int CALLSTATE_DISCONNECTED		= 1006;
+	
 	
 	// Operation modes
 	public static final int OPMODE_BG = 100;		// Background
@@ -157,11 +167,7 @@ public class CallMonitorService extends Service {
 	@Override
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
-		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		telMng.listen(mCallMonitorReceiver, PhoneStateListener.LISTEN_NONE);
-		if(mOutgoingCallReceiver != null) {
-			unregisterReceiver(mOutgoingCallReceiver);
-		}
+		deactivateReceivers();
 		mClient = null;
 		Log.i(TAG + METHOD, " Call info receivers stopped.");
 		super.onDestroy();
@@ -190,7 +196,6 @@ public class CallMonitorService extends Service {
 	}
 	
 	// Methods for CallMonitorReceiver and OutgoingCallReceiver to report events
-	// This methods 
 	
 	/**
 	 * Used by CallMonitorReceiver to report a change in call state.
@@ -317,6 +322,15 @@ public class CallMonitorService extends Service {
 	}
 	
 	
+	private void deactivateReceivers() {
+		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+		telMng.listen(mCallMonitorReceiver, PhoneStateListener.LISTEN_NONE);
+		if(mOutgoingCallReceiver != null) {
+			unregisterReceiver(mOutgoingCallReceiver);
+		}
+	}
+	
+	
 	/**
      * Determines whether the app is running in system or user space
      * 
@@ -404,6 +418,23 @@ public class CallMonitorService extends Service {
 	 * precise call state monitoring.
 	 */
 	private void hangupCallHard() {
+		
+	}
+	
+	
+	// INTERFACE CallMonitorInterface
+	
+	public void csmif_ServiceState(final int what) {
+		sendMsg(what, null);
+	}
+	
+	
+	public void csmif_CallState(final int state, final String extra) {
+		
+	}
+	
+	
+	public void csmif_SrvccEvent() {
 		
 	}
 }

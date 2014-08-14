@@ -79,6 +79,10 @@ public class VDMainActivity extends Activity {
                 	Globals.icallnumber++;
                 	refreshCallNumber(null);
                     break;
+                case DialerService.MSG_DS_CALLENDED:
+                	Log.i(TAG + METHOD, "MSG_DS_CALLENDED received from DialerService.");
+                	startNextCallTimer();
+                    break;
                 default:
                     super.handleMessage(msg);
             }
@@ -98,6 +102,7 @@ public class VDMainActivity extends Activity {
                 case ReceiverService.MSG_RS_NEWCALLATTEMPT:
                 	Log.i(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
                 	Globals.icallnumber++;
+                	stopNextCallTimer();
                 	refreshCallNumber(null);
                     break;
                 default:
@@ -408,7 +413,7 @@ public class VDMainActivity extends Activity {
     	}
     }
     
-    public void startNextCallTimer() {
+    private void startNextCallTimer() {
     	final String METHOD = ".updateNextCallTimer()";
     	if(Globals.mainactivity != null) {
     		if(count_thread != null) {
@@ -419,7 +424,7 @@ public class VDMainActivity extends Activity {
 	    		@Override
 	    		public void run() {
 	                try {
-	                    while(!isInterrupted() && countdown >= 0) {
+	                    while(!isInterrupted() && countdown > 0) {
 	                        Thread.sleep(1000);
 	                        runOnUiThread(new Runnable() {
 	                            @Override
@@ -468,6 +473,8 @@ public class VDMainActivity extends Activity {
     
     public void unbindReceiverService() {
     	unbindService(mRsConnection);
+    	Intent intent = new Intent(this, ReceiverService.class);
+    	stopService(intent);
     	mReceiverService 	= null;
     	mRsConnection		= null;
     }
@@ -492,6 +499,8 @@ public class VDMainActivity extends Activity {
     public void unbindDialerService() {
     	Globals.is_vd_running = false;
     	unbindService(mDsConnection);
+    	Intent intent = new Intent(this, DialerService.class);
+    	stopService(intent);
     	mDialerService	= null;
     	mDsConnection	= null;
     }

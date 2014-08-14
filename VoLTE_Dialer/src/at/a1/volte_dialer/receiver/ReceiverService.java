@@ -187,6 +187,8 @@ public class ReceiverService extends Service {
 		}
 		if(mCmsServer != null) {
             unbindService(mConnection);
+            Intent monintent = new Intent(this, CallMonitorService.class);
+            stopService(monintent);
             mCmsServer = null;
             Log.i(TAG + METHOD, "Unbound to CallMonitorService");
         }
