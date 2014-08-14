@@ -26,30 +26,25 @@ import android.util.Log;
 public class DialerReceiver extends BroadcastReceiver  {
 	public static final String TAG = "DialerReceiver";
 	
-	DsHandlerInterface dsIf;
+	public static DsHandlerInterface dsIf = null;
 	
-	public DialerReceiver() {
-		
-	}
-	
-	public DialerReceiver(DsHandlerInterface ds) {
-		super();
+/*	public void setDs(DsHandlerInterface ds) {
 		dsIf = ds;
-	}
-
+	} */
+	
     @Override
     public void onReceive(final Context context, Intent intent) {
     	final String METHOD = ":onReceive()  ";
-
-    	if(dsIf.dsIf_isCallOngoing()) {
-    		Log.i(TAG + METHOD, "Terminate call.");
-    		dsIf.dsIf_endCall();
-    		dsIf.dsIf_startNextCallTimer();
-    		
-    	}
-    	else {
-    		Log.i(TAG + METHOD, "Trigger new call.");
-    		dsIf.dsIf_dialCall();
+    	
+    	if(dsIf != null) {
+	    	if(dsIf.dsIf_isCallOngoing()) {
+	    		Log.i(TAG + METHOD, "Terminate call.");
+	    		dsIf.dsIf_endCall();
+	    	}
+	    	else {
+	    		Log.i(TAG + METHOD, "Trigger new call.");
+	    		dsIf.dsIf_dialCall();
+	    	}
     	}
     }
 	

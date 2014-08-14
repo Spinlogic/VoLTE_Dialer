@@ -61,6 +61,8 @@ public class VDMainActivity extends Activity {
 	final private Messenger	mDsClient 			= new Messenger(new DsMsgHandler());	// to receive messages from DialerService
 	final private Messenger	mRsClient 			= new Messenger(new RsMsgHandler());	// to receive messages from ReceiverService
 	
+	private ServiceConnection mDsConnection		= null;
+	private ServiceConnection mRsConnection		= null;
 	
 	
 	/**
@@ -105,7 +107,7 @@ public class VDMainActivity extends Activity {
     }
     
     
-	private ServiceConnection mDsConnection = new ServiceConnection() {
+	class DsConnection implements ServiceConnection {
 			
 	        public void onServiceConnected(ComponentName className, IBinder service) {
 	        	final String METHOD = "::mDsConnection::onServiceConnected()  ";
@@ -131,7 +133,7 @@ public class VDMainActivity extends Activity {
 	    };
     
     
-	private ServiceConnection mRsConnection = new ServiceConnection() {
+	class RsConnection implements ServiceConnection {
 		
         public void onServiceConnected(ComponentName className, IBinder service) {
         	final String METHOD = "::mRsConnection::onServiceConnected()  ";
@@ -454,6 +456,7 @@ public class VDMainActivity extends Activity {
     
     
     public void bindReceiverService() {
+    	mRsConnection = new RsConnection();
     	Intent intent = new Intent(this, ReceiverService.class);
 		String suffix = (Globals.msisdn.length() < Globals.RIGHT_MATCH) ? 
 						Globals.msisdn : 
@@ -465,13 +468,15 @@ public class VDMainActivity extends Activity {
     
     public void unbindReceiverService() {
     	unbindService(mRsConnection);
-    	mReceiverService = null;
+    	mReceiverService 	= null;
+    	mRsConnection		= null;
     }
     
     
     public void bindDialerService() {
     	if(!Globals.msisdn.isEmpty()) {
     		Globals.is_vd_running = true;
+    		mDsConnection = new DsConnection();
 	    	Intent intent = new Intent(this, DialerService.class);
 			intent.putExtra(DialerService.EXTRA_MSISDN, Globals.msisdn);
 			intent.putExtra(DialerService.EXTRA_DURATION, Globals.callduration);
@@ -487,7 +492,8 @@ public class VDMainActivity extends Activity {
     public void unbindDialerService() {
     	Globals.is_vd_running = false;
     	unbindService(mDsConnection);
-    	mDialerService = null;
+    	mDialerService	= null;
+    	mDsConnection	= null;
     }
     
     public void newMsisdn() {

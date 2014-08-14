@@ -76,6 +76,7 @@ public class CallMonitorService extends Service {
 	
 	private boolean 				is_system;
 	private boolean					is_client_diconnect;
+	private boolean					is_oncall;	// call being dialed, active or ringing (incoming)
 	private int						opmode;
 	private CallMonitorReceiver 	mCallMonitorReceiver;
 	private OutgoingCallReceiver 	mOutgoingCallReceiver;
@@ -101,7 +102,9 @@ public class CallMonitorService extends Service {
                 case MSG_CLIENT_ADDHANDLER:
                 	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from client.");
                 	mClient = msg.replyTo;
-                	sendMsg(MSG_SERVER_SYSTEMPROCESS, null);
+                	if(is_system) {
+                		sendMsg(MSG_SERVER_SYSTEMPROCESS, null);
+                	}
                 	activateReceivers();	// when bounding, we activate receivers here
                     break;
                 default:
@@ -113,6 +116,7 @@ public class CallMonitorService extends Service {
 	public CallMonitorService() {
 		is_system				= false;
 		is_client_diconnect		= false;
+		is_oncall				= false;
 		mCallMonitorReceiver	= null;
 		mOutgoingCallReceiver	= null;
 		mCallDescription		= null;
@@ -197,6 +201,7 @@ public class CallMonitorService extends Service {
 	 */
 	public void startCall(String direction, String mt_msisdn) {
 		final String METHOD = "::startCall()  ";
+		is_oncall = true;
 		Log.i(TAG + METHOD, " Starting call. Direction = " + direction);
 		if(mCallDescription == null) {
 			mCallDescription = new CallDescription(this, direction, CallMonitorReceiver.signalstrength);
@@ -234,9 +239,10 @@ public class CallMonitorService extends Service {
 			mCallDescription.writeCallInfoToLog();
 			mCallDescription = null;	// no needed any more
 		}
-		if(opmode == OPMODE_MO) {
+		if(opmode == OPMODE_MO && is_oncall) {
 			sendMsg(MSG_SERVER_OUTCALL_END, null);
 		}
+		is_oncall = false;
 		Log.i(TAG + METHOD, " Call terminated.");
 	}
 	
@@ -328,10 +334,10 @@ public class CallMonitorService extends Service {
     
     private void hangupCall() {
     	if(is_system) {
-    		hangupCallSoft();
+    		hangupCallHard();
     	}
     	else {
-    		hangupCallHard();
+    		hangupCallSoft();
     	}
     }
     

@@ -230,7 +230,8 @@ public class DialerService extends Service implements DsHandlerInterface {
 		}
 		// stop dialing loop (MSG_SERVER_OUTCALL_END hopefully processed)
 		stopAlarms();
-		unregisterReceiver(mDialerReceiver);
+		DialerReceiver.dsIf = null;
+//		unregisterReceiver(mDialerReceiver);
 		// Give some time to log the last call. In case there was one ongoing
 		Handler h = new Handler();
 		h.postDelayed(new Runnable() {
@@ -269,8 +270,9 @@ public class DialerService extends Service implements DsHandlerInterface {
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
 		Log.d(TAG + METHOD, "Binding to CallMonitorService");
 		
-		registerDialerReceiver();
-				
+//		registerDialerReceiver();
+		DialerReceiver.dsIf = this;
+		
 		return mDsServer.getBinder();
 	}
 	
@@ -327,7 +329,7 @@ public class DialerService extends Service implements DsHandlerInterface {
 	public void setAlarm(long waittime) {
 		final String METHOD = "::setAlarm()  ";
 		Intent alarmIntent = new Intent(this, DialerReceiver.class);
-		alarmIntent.setAction(INTENT_ACTION_ALARM);
+//		alarmIntent.setAction(INTENT_ACTION_ALARM);
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 		int currentapiVersion = android.os.Build.VERSION.SDK_INT;
@@ -351,10 +353,6 @@ public class DialerService extends Service implements DsHandlerInterface {
 	
 	public void dsIf_dialCall() {
 		dialCall(msisdn);
-	}
-	
-	public void dsIf_startNextCallTimer() {
-		setAlarm((long) waittime);
 	}
 	
 	
@@ -391,29 +389,8 @@ public class DialerService extends Service implements DsHandlerInterface {
 		IntentFilter filter = new IntentFilter();
         filter.addAction(INTENT_ACTION_ALARM);
         mDialerReceiver = new DialerReceiver();
+ //       mDialerReceiver.setDs(this);
         registerReceiver(mDialerReceiver, filter);
-	}
-	
-	public class DialerReceiver extends BroadcastReceiver  {
-		public static final String TAG = "DialerReceiver";
-		
-
-	    @Override
-	    public void onReceive(final Context context, Intent intent) {
-	    	final String METHOD = ":onReceive()  ";
-
-	    	if(dsIf_isCallOngoing()) {
-	    		Log.i(TAG + METHOD, "Terminate call.");
-	    		dsIf_endCall();
-	    		dsIf_startNextCallTimer();
-	    		
-	    	}
-	    	else {
-	    		Log.i(TAG + METHOD, "Trigger new call.");
-	    		dsIf_dialCall();
-	    	}
-	    }
-		
 	}
 
 	

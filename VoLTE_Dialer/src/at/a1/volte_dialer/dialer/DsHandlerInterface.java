@@ -14,6 +14,5 @@ import android.content.Context;
 public interface DsHandlerInterface {
 	public boolean	dsIf_isCallOngoing();
 	public void 	dsIf_endCall();
-	public void 	dsIf_startNextCallTimer();
 	public void 	dsIf_dialCall();
 }
