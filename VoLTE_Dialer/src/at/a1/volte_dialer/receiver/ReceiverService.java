@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -18,6 +18,7 @@
 
 package at.a1.volte_dialer.receiver;
 
+import net.spinlogic.logger.Logger;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ComponentName;
@@ -30,7 +31,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Log;
 import android.view.KeyEvent;
 import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.callmonitor.CallMonitorService;
@@ -80,10 +80,10 @@ public class ReceiverService extends Service {
         	final String METHOD = "::CmsHandler::handleMessage()  ";
             switch (msg.what) {
                 case CallMonitorService.MSG_SERVER_INCOMING_CALL:
-                	Log.i(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
                 	Bundle srv_data = msg.getData();
                 	String msisdn = srv_data.getString(CallMonitorService.EXTRA_MTC_MSISDN);
-                	Log.i(TAG + METHOD, "MSISDN: " + msisdn);
+                	Logger.Log(TAG + METHOD, "MSISDN: " + msisdn);
                 	if(msisdn != null) {
                 		if(msisdn.endsWith(suffix)) {
                 			sendMsg(mRsClient, MSG_RS_NEWCALLATTEMPT, null);
@@ -91,7 +91,7 @@ public class ReceiverService extends Service {
                 		}
                 	}
                 	else {
-                		Log.i(TAG + METHOD, "ERROR null MISDN received.");
+                		Logger.Log(TAG + METHOD, "ERROR null MISDN received.");
                 	}
                     break;
                 default:
@@ -111,18 +111,18 @@ public class ReceiverService extends Service {
         	final String METHOD = "::IncomingHandler::handleMessage()  ";
             switch (msg.what) {
                 case MSG_NEW_SUFFIX:
-                	Log.i(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
+                	Logger.Log(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
                 	Bundle bsuffix = msg.getData();
                 	String newsuffix = bsuffix.getString(EXTRA_SUFFIX);
                 	if(newsuffix != null) {
                 		suffix = newsuffix;
                 	}
                 	else {
-                		Log.i(TAG + METHOD, "ERROR null suffix received.");
+                		Logger.Log(TAG + METHOD, "ERROR null suffix received.");
                 	}
                     break;
                 case MSG_CLIENT_ADDHANDLER:
-                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
                 	mRsClient = msg.replyTo;
                 	break;
                 default:
@@ -147,13 +147,13 @@ public class ReceiverService extends Service {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
         	mCmsServer = new Messenger(service);
             sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ADDHANDLER, mCmsClient);
-            Log.i(TAG + METHOD, "Bound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Bound to CallMonitorService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
         	mCmsServer = null;
-            Log.d(TAG + METHOD, "Unbound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
         }
     };
 	
@@ -170,7 +170,7 @@ public class ReceiverService extends Service {
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MT);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
-		Log.d(TAG + METHOD, "Binding to CallMonitorService");
+		Logger.Log(TAG + METHOD, "Binding to CallMonitorService");
 		int res = super.onStartCommand(intent, flags, startId);
 		return res;
 	}  */
@@ -180,19 +180,15 @@ public class ReceiverService extends Service {
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()   ";
 		super.onDestroy();
-		// Disconnect any ongoing call
-		if(Globals.is_mtc_ongoing == true) {
-			Globals.hangupCall();	// No need to check whether it is in system space.
-			Globals.is_mtc_ongoing = false;
-		}
+		// CallMonitorService will disconnect any ongoing call
 		if(mCmsServer != null) {
             unbindService(mConnection);
             Intent monintent = new Intent(this, CallMonitorService.class);
             stopService(monintent);
             mCmsServer = null;
-            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
         }
-		Log.i(TAG + METHOD, "service stopped");
+		Logger.Log(TAG + METHOD, "service stopped");
 	}
 
 	
@@ -208,7 +204,7 @@ public class ReceiverService extends Service {
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MT);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
-		Log.d(TAG + METHOD, "Binding to CallMonitorService");
+		Logger.Log(TAG + METHOD, "Binding to CallMonitorService");
 		
 		return mRsServer.getBinder();
 	}
@@ -226,20 +222,20 @@ public class ReceiverService extends Service {
 		final String METHOD = "::sendMsg()  ";
 		
 		if(toMsgr != null) {
-			Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+			Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 			Message msg = Message.obtain(null, what, 0, 0);
 			if(rplyToMsgr != null) {
 				msg.replyTo = rplyToMsgr;
 			}
 			try {
 				toMsgr.send(msg);
-				Log.i(TAG + METHOD, "Message sent to client.");
+				Logger.Log(TAG + METHOD, "Message sent to client.");
 			} catch (RemoteException e) {
-				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
 			}
 		}
 		else {
-			Log.d(TAG + METHOD, "ERROR. Null value for toMsgr.");
+			Logger.Log(TAG + METHOD, "ERROR. Null value for toMsgr.");
 		}
 	}
 	
@@ -252,7 +248,7 @@ public class ReceiverService extends Service {
     	            KeyEvent.KEYCODE_HEADSETHOOK));
     		sendOrderedBroadcast(i, null);
     	} catch(Exception e) {
-    		Log.d(TAG + METHOD, "Exception: " + e);
+    		Logger.Log(TAG + METHOD, "Exception: " + e);
     	}
     }
 }

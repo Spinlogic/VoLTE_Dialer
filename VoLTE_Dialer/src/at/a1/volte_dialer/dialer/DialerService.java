@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -15,9 +15,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-
 package at.a1.volte_dialer.dialer;
 
+import net.spinlogic.logger.Logger;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -25,7 +25,6 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
@@ -34,7 +33,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Log;
 import at.a1.volte_dialer.callmonitor.CallMonitorService;
 
 /**
@@ -106,19 +104,19 @@ public class DialerService extends Service implements DsHandlerInterface {
         	final String METHOD = "::CmsHandler::handleMessage()  ";
             switch (msg.what) {
                 case CallMonitorService.MSG_SERVER_OUTCALL_DIALING:
-                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_DIALING received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_OUTCALL_DIALING received from CallMonitorService.");
                 	callstate = (is_system) ? STATE_DIALING : STATE_ACTIVE;
                 	sendMsg(mDsClient, MSG_DS_NEWCALLATTEMPT, null);
                     break;
-                case CallMonitorService.MSG_SERVER_OUTCALL_ACTIVE:	// only received if is_system
-                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_ACTIVE received from CallMonitorService.");
+                case CallMonitorService.MSG_SERVER_CALL_ACTIVE:	// only received if is_system
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_OUTCALL_ACTIVE received from CallMonitorService.");
                 		// stop the next call timer
                 		stopAlarms();
                 		// start the call timer
                 		setAlarm((long) duration);
                 	break;
                 case CallMonitorService.MSG_SERVER_OUTCALL_END:
-                	Log.i(TAG + METHOD, "MSG_SERVER_OUTCALL_END received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_OUTCALL_END received from CallMonitorService.");
                 	callstate = STATE_IDLE;
                 	if(!is_dismissed) {
                 		sendMsg(mDsClient, MSG_DS_CALLENDED, null);
@@ -126,7 +124,7 @@ public class DialerService extends Service implements DsHandlerInterface {
                 	}
                     break;
                 case CallMonitorService.MSG_SERVER_STATE_INSERVICE:
-                	Log.i(TAG + METHOD, "MSG_SERVER_STATE_INSERVICE received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_STATE_INSERVICE received from CallMonitorService.");
                 	if(!is_inservice) {
                 		// This is the first message that DialerService gets from CallMonitorService.
                 		startDialingLoop();
@@ -134,14 +132,14 @@ public class DialerService extends Service implements DsHandlerInterface {
                 	is_inservice = true;
                     break;
                 case CallMonitorService.MSG_SERVER_STATE_OUTSERVICE:
-                	Log.i(TAG + METHOD, "MSG_SERVER_STATE_OUTSERVICE received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_STATE_OUTSERVICE received from CallMonitorService.");
                 	if(is_inservice) {
                 		stopDialingLoop();
                 	}
                 	is_inservice = false;
                     break;
                 case CallMonitorService.MSG_SERVER_SYSTEMPROCESS:
-                	Log.i(TAG + METHOD, "MSG_SERVER_SYSTEMPROCESS received from CallMonitorService.");
+                	Logger.Log(TAG + METHOD, "MSG_SERVER_SYSTEMPROCESS received from CallMonitorService.");
                 	is_system = true;
                 	break;
                 default:
@@ -161,7 +159,7 @@ public class DialerService extends Service implements DsHandlerInterface {
         	final String METHOD = "::IncomingHandler::handleMessage()  ";
             switch (msg.what) {
                 case MSG_NEW_CONFIG:
-                	Log.i(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
+                	Logger.Log(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
                 	Bundle bundle = msg.getData();
                 	String newmsisdn = bundle.getString(EXTRA_MSISDN);
                 	if(newmsisdn != null) {
@@ -177,7 +175,7 @@ public class DialerService extends Service implements DsHandlerInterface {
                 	}
                     break;
                 case MSG_CLIENT_ADDHANDLER:
-                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
                 	mDsClient = msg.replyTo;
                 	break;
                 default:
@@ -192,13 +190,13 @@ public class DialerService extends Service implements DsHandlerInterface {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
         	mCmsServer = new Messenger(service);
             sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ADDHANDLER, mCmsClient);
-            Log.i(TAG + METHOD, "Bound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Bound to CallMonitorService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
         	mCmsServer = null;
-            Log.d(TAG + METHOD, "Unbound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
         }
     };
 	
@@ -229,7 +227,6 @@ public class DialerService extends Service implements DsHandlerInterface {
 			sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ENDCALL, null);
 		}
 		// Give some time to log the last call. In case there was one ongoing
-		Handler h = new Handler();
 		stopAlarms();
 		DialerReceiver.dsIf = null;
 		if(mCmsServer != null) {
@@ -237,9 +234,9 @@ public class DialerService extends Service implements DsHandlerInterface {
             Intent monintent = new Intent(context, CallMonitorService.class);
             stopService(monintent);
             mCmsServer = null;
-            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
+            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
         }
-		Log.d(TAG + METHOD, "service destroyed");
+		Logger.Log(TAG + METHOD, "service destroyed");
 /*		h.postDelayed(new Runnable() {
 			public void run() {
 				// stop dialing loop (MSG_SERVER_OUTCALL_END hopefully processed)
@@ -250,9 +247,9 @@ public class DialerService extends Service implements DsHandlerInterface {
 		            Intent monintent = new Intent(context, CallMonitorService.class);
 		            stopService(monintent);
 		            mCmsServer = null;
-		            Log.i(TAG + METHOD, "Unbound to CallMonitorService");
+		            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
 		        }
-				Log.d(TAG + METHOD, "service destroyed");
+				Logger.Log(TAG + METHOD, "service destroyed");
 			}
 		}, 1000); */	
 		super.onDestroy();
@@ -278,7 +275,7 @@ public class DialerService extends Service implements DsHandlerInterface {
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MO);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
-		Log.d(TAG + METHOD, "Binding to CallMonitorService");
+		Logger.Log(TAG + METHOD, "Binding to CallMonitorService");
 		DialerReceiver.dsIf = this;
 		return mDsServer.getBinder();
 	}
@@ -303,16 +300,16 @@ public class DialerService extends Service implements DsHandlerInterface {
 	public void sendMsg(Messenger toMsgr, int what, Messenger rplyToMsgr) {
 		final String METHOD = "::sendMsg()  ";
 		
-		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+		Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 		Message msg = Message.obtain(null, what, 0, 0);
 		if(rplyToMsgr != null) {
 			msg.replyTo = rplyToMsgr;
 		}
 		try {
 			toMsgr.send(msg);
-			Log.i(TAG + METHOD, "Message sent to client.");
+			Logger.Log(TAG + METHOD, "Message sent to client.");
 		} catch (RemoteException e) {
-			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -345,7 +342,7 @@ public class DialerService extends Service implements DsHandlerInterface {
 		} else{
 			alarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + (waittime * 1000), pendingIntent);
 		}
-		Log.i(TAG + METHOD, "ALARM will go off in " + Long.toString(waittime * 1000));
+		Logger.Log(TAG + METHOD, "ALARM will go off in " + Long.toString(waittime * 1000));
 	}
 	
 	
@@ -355,7 +352,7 @@ public class DialerService extends Service implements DsHandlerInterface {
 		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 		alarmManager.cancel(pendingIntent);
-		Log.i(TAG + METHOD, "All timers have been stopped.");
+		Logger.Log(TAG + METHOD, "All timers have been stopped.");
 	}
 	
 	public void dsIf_dialCall() {
@@ -373,7 +370,7 @@ public class DialerService extends Service implements DsHandlerInterface {
 				intent.setData(Uri.parse("tel:" + telnum));
 				intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
 				startActivity(intent);
-				Log.d(TAG + METHOD, "Calling " + telnum);
+				Logger.Log(TAG + METHOD, "Calling " + telnum);
 				
 				// Activate an alarm to end the call
 				if(is_system) {

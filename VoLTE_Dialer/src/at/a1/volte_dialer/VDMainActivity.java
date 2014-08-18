@@ -22,6 +22,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Stack;
 
+import net.spinlogic.logger.Logger;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
@@ -39,7 +41,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.Parcelable;
 import android.os.RemoteException;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,7 +49,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import at.a1.volte_dialer.callmonitor.CallMonitorService;
 import at.a1.volte_dialer.dialer.DialerService;
 import at.a1.volte_dialer.receiver.ReceiverService;
 
@@ -75,12 +75,12 @@ public class VDMainActivity extends Activity {
         	final String METHOD = "::DsMsgHandler::handleMessage()  ";
             switch (msg.what) {
                 case DialerService.MSG_DS_NEWCALLATTEMPT:
-                	Log.i(TAG + METHOD, "MSG_DS_NEWCALLATTEMPT received from DialerService.");
+                	Logger.Log(TAG + METHOD, "MSG_DS_NEWCALLATTEMPT received from DialerService.");
                 	Globals.icallnumber++;
                 	refreshCallNumber(null);
                     break;
                 case DialerService.MSG_DS_CALLENDED:
-                	Log.i(TAG + METHOD, "MSG_DS_CALLENDED received from DialerService.");
+                	Logger.Log(TAG + METHOD, "MSG_DS_CALLENDED received from DialerService.");
                 	startNextCallTimer();
                     break;
                 default:
@@ -100,7 +100,7 @@ public class VDMainActivity extends Activity {
         	final String METHOD = "::RsMsgHandler::handleMessage()  ";
             switch (msg.what) {
                 case ReceiverService.MSG_RS_NEWCALLATTEMPT:
-                	Log.i(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
+                	Logger.Log(TAG + METHOD, "MSG_RS_NEWCALLATTEMPT received from ReceiverService.");
                 	Globals.icallnumber++;
                 	stopNextCallTimer();
                 	refreshCallNumber(null);
@@ -118,7 +118,7 @@ public class VDMainActivity extends Activity {
 	        	final String METHOD = "::mDsConnection::onServiceConnected()  ";
 	        	mDialerService = new Messenger(service);
 	        	sendMsg(mDialerService, DialerService.MSG_CLIENT_ADDHANDLER, mDsClient);
-	        	Log.i(TAG + METHOD, "Bound to RemoteService");
+	        	Logger.Log(TAG + METHOD, "Bound to RemoteService");
 	        }
 	
 	        public void onServiceDisconnected(ComponentName className) {
@@ -144,7 +144,7 @@ public class VDMainActivity extends Activity {
         	final String METHOD = "::mRsConnection::onServiceConnected()  ";
         	mReceiverService = new Messenger(service);
         	sendMsg(mReceiverService, ReceiverService.MSG_CLIENT_ADDHANDLER, mRsClient);
-        	Log.i(TAG + METHOD, "Bound to RemoteService");
+        	Logger.Log(TAG + METHOD, "Bound to RemoteService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -179,7 +179,6 @@ public class VDMainActivity extends Activity {
 			bindReceiverService();
 		}
 		Globals.mainactivity = this;
-		Globals.is_running_as_system = Globals.isAppRunningAsSystem();
 	}
 	
 	@Override
@@ -439,7 +438,7 @@ public class VDMainActivity extends Activity {
 	                        });
 	                    }
 	                } catch (InterruptedException e) {
-	                	Log.e(TAG + METHOD, "InterruptedException catched");
+	                	Logger.Log(TAG + METHOD, "InterruptedException catched");
 	                }
 	            }
 	        };
@@ -513,14 +512,14 @@ public class VDMainActivity extends Activity {
 					Globals.msisdn.substring(Globals.msisdn.length() - Globals.RIGHT_MATCH);
     		Bundle b = new Bundle();
     		b.putString(ReceiverService.EXTRA_SUFFIX, suffix);
-    		Log.i(TAG + METHOD, "Sending new suffix.");
+    		Logger.Log(TAG + METHOD, "Sending new suffix.");
 			Message msg = Message.obtain(null, ReceiverService.MSG_NEW_SUFFIX, 0, 0);
 			msg.setData(b);
 			try {
 				mReceiverService.send(msg);
-				Log.i(TAG + METHOD, "Message sent to client.");
+				Logger.Log(TAG + METHOD, "Message sent to client.");
 			} catch (RemoteException e) {
-				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
 			}
     	}
     	else {
@@ -539,16 +538,16 @@ public class VDMainActivity extends Activity {
 	public void sendMsg(Messenger toMsgr, int what, Messenger plyToMsgr) {
 		final String METHOD = "::sendMsg()  ";
 		
-		Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+		Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 		Message msg = Message.obtain(null, what, 0, 0);
 		if(plyToMsgr != null) {
 			msg.replyTo = plyToMsgr;
 		}
 		try {
 			toMsgr.send(msg);
-			Log.i(TAG + METHOD, "Message sent to client.");
+			Logger.Log(TAG + METHOD, "Message sent to client.");
 		} catch (RemoteException e) {
-			Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
 		}
 	}
     

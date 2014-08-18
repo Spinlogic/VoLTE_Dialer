@@ -16,18 +16,13 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-
 package at.a1.volte_dialer;
 
 import java.io.File;
 import java.lang.reflect.Method;
-
-import android.content.Context;
-import android.content.Intent;
+import net.spinlogic.logger.Logger;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
-import android.view.KeyEvent;
 
 /**
  * Defines global constants, variables and static methods. 
@@ -56,7 +51,6 @@ public class Globals {
 	
 	
 	// ---- Variables ----
-	public static boolean	is_running_as_system;	// is the app running as system process?
 	public static int		opmode;					// Mode of operation
 	public static boolean	is_mtc_ongoing;			// indicates if there is a MT call ongoing
     public static boolean	is_vd_running;			// is the dialer running?
@@ -84,77 +78,6 @@ public class Globals {
     public static boolean fileExist(String filepath) {
     	File path = new File(filepath);
     	return path.exists();
-    }
-    
-	/**
-	 * Uses reflection to hangup an active call 
-	 */
-	public static void hangupCall(){
-		final String METHOD = ":hangupCall()  ";
-		try {
-	        //String serviceManagerName = "android.os.IServiceManager";
-	        String serviceManagerName = "android.os.ServiceManager";
-	        String serviceManagerNativeName = "android.os.ServiceManagerNative";
-	        String telephonyName = "com.android.internal.telephony.ITelephony";
-
-	        Class telephonyClass;
-	        Class telephonyStubClass;
-	        Class serviceManagerClass;
-	        Class serviceManagerNativeClass;
-	        Class serviceManagerNativeStubClass;
-
-	        //	Method telephonyCall;
-	        Method telephonyEndCall;
-	        //	Method telephonyAnswerCall;
-	        Method getDefault;
-
-	        // Method getService;
-	        Object telephonyObject;
-	        Object serviceManagerObject;
-
-	        telephonyClass = Class.forName(telephonyName);
-	        telephonyStubClass = telephonyClass.getClasses()[0];
-	        serviceManagerClass = Class.forName(serviceManagerName);
-	        serviceManagerNativeClass = Class.forName(serviceManagerNativeName);
-
-	        Method getService = // getDefaults[29];
-	                serviceManagerClass.getMethod("getService", String.class);
-
-	        Method tempInterfaceMethod = serviceManagerNativeClass.getMethod(
-	                					"asInterface", IBinder.class);
-
-	        Binder tmpBinder = new Binder();
-	        tmpBinder.attachInterface(null, "fake");
-
-	        serviceManagerObject = tempInterfaceMethod.invoke(null, tmpBinder);
-	        IBinder retbinder = (IBinder) getService.invoke(serviceManagerObject, "phone");
-	        Method serviceMethod = telephonyStubClass.getMethod("asInterface", IBinder.class);
-
-	        telephonyObject = serviceMethod.invoke(null, retbinder);
-	        //telephonyCall = telephonyClass.getMethod("call", String.class);
-	        telephonyEndCall = telephonyClass.getMethod("endCall");
-	        //telephonyAnswerCall = telephonyClass.getMethod("answerRingingCall");
-
-	        telephonyEndCall.invoke(telephonyObject);
-
-	    } catch (Exception e) {
-			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
-	    }
-	}
-    
-    
-    /**
-     * Determines whether the app is running in system or user space
-     * 
-     * @return	true	App is running in system space
-     * 			false	App is running in user space
-     */
-    public static boolean isAppRunningAsSystem() {
-    	int uid_radio = android.os.Process.getUidForName("radio");
-    	int uid_system = android.os.Process.getUidForName("system");
-    	int uid_root = android.os.Process.getUidForName("root");
-    	int myuid = android.os.Process.myUid();
-    	return (myuid == uid_radio || myuid == uid_system || myuid == uid_root) ? true : false;
     }
     
 }

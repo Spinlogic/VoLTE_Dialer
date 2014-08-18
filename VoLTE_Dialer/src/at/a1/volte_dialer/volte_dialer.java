@@ -18,11 +18,9 @@
 
 package at.a1.volte_dialer;
 
-import at.a1.volte_dialer.VD_Logger;
+import net.spinlogic.logger.Logger;
 import android.app.Application;
-import android.content.Context;
 import android.telephony.ServiceState;
-import android.telephony.TelephonyManager;
 
 public class volte_dialer extends Application {
 	
@@ -34,10 +32,7 @@ public class volte_dialer extends Application {
 	@Override
 	public void onCreate() {
         super.onCreate();
-        // Init the logger
-        VD_Logger.initializeValues();
 		// Initialize global variables 
-        Globals.is_running_as_system 	= false;
         Globals.is_vd_running 			= false;
         Globals.msisdn 			= VD_Settings.getStringPref(
 						        				this,
@@ -66,6 +61,7 @@ public class volte_dialer extends Application {
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
         Globals.icallnumber 	= 0;
         Globals.is_mtc_ongoing	= false;
+        Logger.initializeValues();
     }
 		
 }

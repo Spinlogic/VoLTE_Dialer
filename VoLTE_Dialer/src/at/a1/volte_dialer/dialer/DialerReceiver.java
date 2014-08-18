@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -15,13 +15,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-
 package at.a1.volte_dialer.dialer;
 
+import net.spinlogic.logger.Logger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 public class DialerReceiver extends BroadcastReceiver  {
 	public static final String TAG = "DialerReceiver";
@@ -38,11 +37,11 @@ public class DialerReceiver extends BroadcastReceiver  {
     	
     	if(dsIf != null) {
 	    	if(dsIf.dsIf_isCallOngoing()) {
-	    		Log.i(TAG + METHOD, "Terminate call.");
+	    		Logger.Log(TAG + METHOD, "Terminate call.");
 	    		dsIf.dsIf_endCall();
 	    	}
 	    	else {
-	    		Log.i(TAG + METHOD, "Trigger new call.");
+	    		Logger.Log(TAG + METHOD, "Trigger new call.");
 	    		dsIf.dsIf_dialCall();
 	    	}
     	}

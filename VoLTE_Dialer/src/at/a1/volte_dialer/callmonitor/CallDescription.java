@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -20,6 +20,8 @@ package at.a1.volte_dialer.callmonitor;
 
 import java.util.List;
 
+import net.spinlogic.logger.Logger;
+
 import android.content.Context;
 import android.telephony.CellIdentityCdma;
 import android.telephony.CellIdentityGsm;
@@ -34,7 +36,6 @@ import android.telephony.CellLocation;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
-import android.util.Log;
 
 public class CallDescription {
 	
@@ -47,8 +48,9 @@ public class CallDescription {
 	private static final String ACCESS_CDMA		= "CDMA";
 	
 	// Call disconnection options
-	public static final String CALL_DISCONNECTED_BY_UE = "UE";
-	public static final String CALL_DISCONNECTED_BY_NW = "NW";
+	public static final String CALL_DISCONNECTED_BY_UE 	= "UE";
+	public static final String CALL_DISCONNECTED_BY_NW 	= "NW";
+	public static final String CALL_DISCONNECTED_BY_UNK = "UNK";	// Unknown. E.g. when the app runs in background.
 	
 	// Call direction options
 	public static final String MT_CALL	= "MT";
@@ -67,7 +69,7 @@ public class CallDescription {
 	private String	endcellinfo;
 	private int		startsignalstrength;
 	private int		endsignalstrength;
-	private boolean srvcc;				// flag that indicates that the call went through SRVCC handover
+	private long 	srvcc;				// timestamp at which SRVCC occurred, set to zero if it did not
 
 	/**
 	 * Constructor.
@@ -88,7 +90,7 @@ public class CallDescription {
 		endcellinfo 		= "";
 		startsignalstrength	= strength;
 		endsignalstrength	= 99;	// unknown
-		srvcc				= false;
+		srvcc				= 0;
 	}
 	
 	/**
@@ -109,13 +111,16 @@ public class CallDescription {
 	 */
 	public void writeCallInfoToLog() {
 		long duration 			= (activetime > 0) ? 
-								  ((endtime - activetime) / 1000) : 
-								  ((endtime - starttime) / 1000);
+								  ((endtime - activetime)) : 
+								  ((endtime - starttime));
 		long callalertedtime 	= (alertingtime > 0) ? 
-								  ((alertingtime - starttime) / 1000) : 
+								  ((alertingtime - starttime)) : 
 								  0;
 		long callconnectedtime	= (activetime > 0) ? 
-								  ((activetime - starttime) / 1000) : 
+								  ((activetime - starttime)) : 
+								  0;
+		long srvcctime			= (srvcc > 0) ? 
+								  ((srvcc - starttime)) : 
 								  0;
 		String logline = direction								+ CallLogger.CSV_CHAR +
 						 prefix									+ CallLogger.CSV_CHAR +
@@ -128,7 +133,7 @@ public class CallDescription {
 						 Integer.toString(startsignalstrength)	+ CallLogger.CSV_CHAR +
 						 endcellinfo							+ CallLogger.CSV_CHAR +
 						 Integer.toString(endsignalstrength)	+ CallLogger.CSV_CHAR +
-						 Boolean.toString(srvcc);
+						 Long.toString(srvcc);
 		CallLogger.appendLog(logline);
 	}
 	
@@ -146,6 +151,10 @@ public class CallDescription {
 	
 	public void setDirection(String dir) {
 		direction = dir;
+	}
+	
+	public void setSrvccTime() {
+		srvcc = System.currentTimeMillis();
 	}
 	
 	public void setDisconnectionCause(String cause) {
@@ -249,7 +258,7 @@ public class CallDescription {
 		            returnvalue +=  String.valueOf(cdmaLoc.getBaseStationId());
 	        	} catch(ClassCastException ex) {
 	        		returnvalue +=  ACCESS_UNKNOWN;
-	        		Log.d("GeoPosition::getCurrentCellId : Tipo de localizacion de celda desconocido. Exception: ", ex.getMessage());
+	        		Logger.Log(TAG + METHOD, ex.getMessage());
 	        	}
 	        }
 		}

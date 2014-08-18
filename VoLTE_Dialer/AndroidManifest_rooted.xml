@@ -34,6 +34,7 @@
    	
     <application
         android:allowBackup="true"
+        android:process="com.android.phone"
         android:name="at.a1.volte_dialer.volte_dialer"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -56,12 +57,6 @@
 		    	 android:enabled="true"
 		    	 android:exported="false" />
         
-        <!-- PhoneState package -->
-		<receiver android:name="at.a1.volte_dialer.phonestate.PhoneStateReceiver" />
-        <service android:name="at.a1.volte_dialer.phonestate.PhoneStateService"
-		    	 android:enabled="true"
-		    	 android:exported="false" />
-        
         <!-- Receiver package -->
 		<service android:name="at.a1.volte_dialer.receiver.ReceiverService"
 		    	 android:enabled="true"
@@ -71,10 +66,15 @@
 		<receiver android:name="at.a1.volte_dialer.callmonitor.CallMonitorReceiver" />
 		<receiver android:name="at.a1.volte_dialer.callmonitor.OutgoingCallReceiver" />
 		<service android:name="at.a1.volte_dialer.callmonitor.CallMonitorService"
-		    	 android:process="com.android.phone"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
 		
+		<!-- Main package -->
+		<receiver android:name="at.a1.volte_dialer.BootUpReceiver">
+		    <intent-filter>
+        		<action android:name="android.intent.action.BOOT_COMPLETED" />
+       	 	</intent-filter>
+  		</receiver>
     </application>
 
 </manifest>

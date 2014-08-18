@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -24,18 +24,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
+import net.spinlogic.logger.Logger;
 import android.os.Environment;
-import android.util.Log;
 
 public class CallLogger {
-	final static String TAG = "VD_Logger";
+	final static String TAG = "CallLogger";
 	
 	public static final String	CSV_CHAR	= ",";	// character to separate entries in log
 	
 	// Log file directory and name
 	public static final String FN_VDDIR = "volte_dialer";
-	public static final String FN_VDLOG = "vdlog.txt";
+	public static final String FN_VDLOG = "vd_calllog.txt";
 	
 	private static File logFile;
 	
@@ -70,11 +69,11 @@ public class CallLogger {
 					String logline = "DATE,TIME,DIRECTION,PREFIX,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
 									 "DISCONNECT CAUSE,START CID,START SIGNAL,END CID,END SIGNAL,SRVCC";
 					insertLine(logline);
-					Log.d(TAG + METHOD, "appendLog: Creating new logfile");
+					Logger.Log(TAG + METHOD, "appendLog: Creating new logfile");
 				}
 			}
 			catch (IOException e) {
-				Log.d(TAG, METHOD + e.getMessage());
+				Logger.Log(TAG, METHOD + e.getMessage());
 			}
 		}
 		try {
@@ -85,7 +84,7 @@ public class CallLogger {
 			insertLine(logline);
 		}
 		catch (IOException e) {
-			Log.d(TAG, METHOD + e.getMessage());
+			Logger.Log(TAG, METHOD + e.getMessage());
 		}
 	}
 	

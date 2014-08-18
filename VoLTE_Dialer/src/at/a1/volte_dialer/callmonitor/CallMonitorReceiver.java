@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -26,11 +26,9 @@ import android.telephony.TelephonyManager;
 public class CallMonitorReceiver extends PhoneStateListener {
 	private static final String TAG = "CallMonitorReceiver";
 	
-	public static int signalstrength;
 	CallMonitorInterface	mCmIf;
 	
 	public CallMonitorReceiver(CallMonitorService cmif) {
-		signalstrength	= 99;	// = Unknown. Values in 3GPP TS27.007
 		mCmIf 			= cmif;
 	}
 	
@@ -49,13 +47,13 @@ public class CallMonitorReceiver extends PhoneStateListener {
 	public void onCallStateChanged(int state, String incomingNumber) {
 		switch(state) {
 			case TelephonyManager.CALL_STATE_IDLE:
-				mCmIf.endCall(signalstrength);
+				mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_IDLE, null);
 				break;
 			case TelephonyManager.CALL_STATE_RINGING:
-				mCmIf.startCall(CallDescription.MT_CALL, incomingNumber);
+				mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_RINGING, incomingNumber);
 				break;
 			case TelephonyManager.CALL_STATE_OFFHOOK:
-				mCmIf.startCall(CallDescription.MO_CALL, incomingNumber);
+				mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_OFFHOOK, incomingNumber);
 				break;
 		}
 	}
@@ -64,7 +62,7 @@ public class CallMonitorReceiver extends PhoneStateListener {
     public void onSignalStrengthsChanged(SignalStrength strength) {
 		super.onSignalStrengthsChanged(strength);
 		if(strength.isGsm()) {
-			signalstrength = strength.getGsmSignalStrength();
+			mCmIf.csmif_SignalStrength(strength.getGsmSignalStrength());
 		}
 	}
 }

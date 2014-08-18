@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sharedUserId="android.uid.phone"
     package="at.a1.volte_dialer"
     android:versionCode="1"
     android:versionName="1.0" >
@@ -20,9 +21,20 @@
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <!-- needed by DialerService for cell location -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- needed by PhoneStateHandler to access the mPhoneFactory via reflection -->
+<!--    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CONNECTIVITY_INTERNAL" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+   	<uses-permission android:name="android.permission.WRITE_SMS" />
+  <uses-permission android:name="android.permission.ACCESS_SUPERUSER"/>
+   	<uses-permission android:name="android.permission.FACTORY_TEST"/> -->
    	
     <application
         android:allowBackup="true"
+        android:process="com.android.phone"
         android:name="at.a1.volte_dialer.volte_dialer"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -40,14 +52,8 @@
         </activity>
         
         <!-- Dialer package -->
-     	<receiver android:name="at.a1.volte_dialer.dialer.DialerReceiver" />
+        <receiver android:name="at.a1.volte_dialer.dialer.DialerReceiver" />
         <service android:name="at.a1.volte_dialer.dialer.DialerService"
-		    	 android:enabled="true"
-		    	 android:exported="false" />
-        
-        <!-- PhoneState package -->
-		<receiver android:name="at.a1.volte_dialer.phonestate.PhoneStateReceiver" />
-        <service android:name="at.a1.volte_dialer.phonestate.PhoneStateService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
         
@@ -62,6 +68,13 @@
 		<service android:name="at.a1.volte_dialer.callmonitor.CallMonitorService"
 		    	 android:enabled="true"
 		    	 android:exported="false" />
+		
+		<!-- Main package -->
+		<receiver android:name="at.a1.volte_dialer.BootUpReceiver">
+		    <intent-filter>
+        		<action android:name="android.intent.action.BOOT_COMPLETED" />
+       	 	</intent-filter>
+  		</receiver>
     </application>
 
 </manifest>

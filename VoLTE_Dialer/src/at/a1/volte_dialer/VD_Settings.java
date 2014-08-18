@@ -18,10 +18,10 @@
 
 package at.a1.volte_dialer;
 
+import net.spinlogic.logger.Logger;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 
 public class VD_Settings {
@@ -41,7 +41,7 @@ public class VD_Settings {
 		try {
 			result = prefs.getString(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
 		}
 		return result;
 	}
@@ -60,7 +60,7 @@ public class VD_Settings {
 		try {
 			result = prefs.getBoolean(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Log.d("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
 		}
 		return result;
 	}
@@ -79,7 +79,7 @@ public class VD_Settings {
 		try {
 			result = prefs.getLong(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Log.d("VD_Settings::getLongPref    ClassCastException: ", e.getMessage());
+			Logger.Log("VD_Settings::getLongPref    ClassCastException: ", e.getMessage());
 		}
 		return result;
 	}
@@ -98,7 +98,7 @@ public class VD_Settings {
 		try {
 			result = prefs.getInt(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Log.d("VD_Settings::getIntPref    ClassCastException: ", e.getMessage());
+			Logger.Log("VD_Settings::getIntPref    ClassCastException: ", e.getMessage());
 		}
 		return result;
 	}

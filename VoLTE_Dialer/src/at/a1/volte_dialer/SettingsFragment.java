@@ -30,8 +30,6 @@ import android.preference.ListPreference;
 import android.preference.PreferenceFragment;
 import android.widget.Toast;
 import at.a1.volte_dialer.callmonitor.CallMonitorService;
-import at.a1.volte_dialer.dialer.DialerService;
-import at.a1.volte_dialer.receiver.ReceiverService;
 
 @SuppressLint("NewApi")
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {

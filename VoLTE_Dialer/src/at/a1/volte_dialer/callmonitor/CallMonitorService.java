@@ -1,5 +1,5 @@
 /**
- *  Dialer for testing VoLTE network side KPIs.
+ *  Part of the dialer for testing VoLTE network side KPIs.
  *  
  *   Copyright (C) 2014  Spinlogic
  *
@@ -19,7 +19,7 @@
 package at.a1.volte_dialer.callmonitor;
 
 import java.lang.reflect.Method;
-
+import net.spinlogic.logger.Logger;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
@@ -34,7 +34,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 
 /**
@@ -50,11 +49,10 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	private static final String TAG = "CallMonitorService";
 	
 	// Extras for the intent create by the client
-//	final static public String EXTRA_CLIENTMSGR 	= "client";		// binder to the client
 	final static public String EXTRA_OPMODE 		= "opmode";		
 	
 	// Messages from clients to this service
-	public static final int MSG_CLIENT_ENDCALL 		= 1;		// Disconnect triggered by the client
+	public static final int MSG_CLIENT_ENDCALL 		= 1;	// Disconnect triggered by the client
 	public static final int MSG_CLIENT_ADDHANDLER 	= 2;	// Add the messenger to send messages to client
 	
 	// Messages from this service to clients
@@ -62,18 +60,22 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	public static final int MSG_SERVER_STATE_OUTSERVICE	= 1;	// The service state is STATE_EMERGENCY_ONLY, STATE_OUT_OF_SERVICE or STATE_POWER_OFF
 	public static final int MSG_SERVER_INCOMING_CALL	= 2;
 	public static final int MSG_SERVER_OUTCALL_DIALING	= 3;
-	public static final int MSG_SERVER_OUTCALL_ACTIVE	= 4;
+	public static final int MSG_SERVER_CALL_ACTIVE		= 4;
 	public static final int MSG_SERVER_OUTCALL_END		= 5;
 	public static final int MSG_SERVER_SYSTEMPROCESS	= 6;	// sent to client if this service is running in the system process
 	
 	// Call States
-	final static private int CALLSTATE_IDLE				= 1000;
-	final static private int CALLSTATE_OFFHOOK			= 1001;
-	final static private int CALLSTATE_DIALING			= 1002;
-	final static private int CALLSTATE_RINGING			= 1003;
-	final static private int CALLSTATE_ACTIVE			= 1004;
-	final static private int CALLSTATE_DISCONNECTING	= 1005;
-	final static private int CALLSTATE_DISCONNECTED		= 1006;
+	final static public int CALLSTATE_IDLE			= 1000;
+	final static public int CALLSTATE_OFFHOOK		= 1001;
+	final static public int CALLSTATE_DIALING		= 1002;
+	final static public int CALLSTATE_INCOMING		= 1003;
+	final static public int CALLSTATE_ALERTING		= 1004;
+	final static public int CALLSTATE_RINGING		= 1005;
+	final static public int CALLSTATE_ACTIVE		= 1006;
+	final static public int CALLSTATE_DISCONNECTING	= 1007;
+	final static public int CALLSTATE_DISCONNECTED	= 1008;
+	final static public int CALLSTATE_HOLDING		= 1009;
+	final static public int CALLSTATE_WAITING		= 1010;
 	
 	
 	// Operation modes
@@ -84,13 +86,15 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	// Extras for MSG_SERVER_INCOMING_CALL sent to client
 	final static public String EXTRA_MTC_MSISDN = "msisdn";
 	
-	private boolean 				is_system;
-	private boolean					is_client_diconnect;
-	private boolean					is_oncall;	// call being dialed, active or ringing (incoming)
-	private int						opmode;
-	private CallMonitorReceiver 	mCallMonitorReceiver;
-	private OutgoingCallReceiver 	mOutgoingCallReceiver;
-	private CallDescription			mCallDescription;
+	private boolean 					is_system;
+	private boolean						is_client_diconnect;
+	private boolean						is_oncall;	// call being dialed, active or ringing (incoming)
+	private int							opmode;
+	private int							signalstrength;
+	private CallMonitorReceiver 		mCallMonitorReceiver;
+	private OutgoingCallReceiver 		mOutgoingCallReceiver;
+	private CallDescription				mCallDescription;
+	private PreciseCallStateReceiver	mPcsr;
 	
 	private Messenger mClient;		// provided by client to service (at most one client can be bound)
 	final Messenger mService;		// provided by service to client
@@ -107,10 +111,10 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
                 case MSG_CLIENT_ENDCALL:
                 	is_client_diconnect = true;
                 	hangupCall();
-                	Log.i(TAG + METHOD, "MSG_CLIENT_DISCONNECT received from client.");
+                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ENDCALL received from client.");
                     break;
                 case MSG_CLIENT_ADDHANDLER:
-                	Log.i(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from client.");
+                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from client.");
                 	mClient = msg.replyTo;
                 	if(is_system) {
                 		sendMsg(MSG_SERVER_SYSTEMPROCESS, null);
@@ -132,7 +136,9 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 		mCallDescription		= null;
 		mClient					= null;
 		opmode					= OPMODE_BG;
+		signalstrength			= 99;	// = Unknown. Values in 3GPP TS27.007 
 		mService 				= new Messenger(new IncomingHandler());
+		mPcsr 					= null;
 		CallLogger.initializeValues();		// init logging
 	}
 
@@ -146,7 +152,7 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		final String METHOD = "::onStartCommand()  ";
 		
-		Log.i(TAG + METHOD, "Starting service.");
+		Logger.Log(TAG + METHOD, "Starting service.");
 		Bundle extras = intent.getExtras();
 		if(extras != null) {
 //			if(extras.containsKey(EXTRA_CLIENTMSGR)) {
@@ -159,7 +165,7 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 		is_system	= isRunningAsSystem();
 		activateReceivers();
 	    
-		Log.i(TAG + METHOD, "Service started.");
+		Logger.Log(TAG + METHOD, "Service started.");
 		int res = super.onStartCommand(intent, flags, startId);
 		return res;
 	}
@@ -167,9 +173,15 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	@Override
 	public void onDestroy() {
 		final String METHOD = "::onDestroy()  ";
+		// Disconnect the ongoing call if the service
+		// is not running in background
+		if(is_oncall && opmode != OPMODE_BG) {
+			hangupCall();
+		}
 		deactivateReceivers();
 		mClient = null;
-		Log.i(TAG + METHOD, " Call info receivers stopped.");
+		Logger.Log(TAG + METHOD, " Call info receivers stopped.");
+		Logger.Log(TAG + METHOD, " Service destroyed.");
 		super.onDestroy();
 	}
 
@@ -184,22 +196,21 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 		
 		Bundle extras = intent.getExtras();
 		if(extras != null) {
-//			if(extras.containsKey(EXTRA_CLIENTMSGR)) {
-//				mClient = new Messenger(extras.getBinder(EXTRA_CLIENTMSGR));
-//			}
 			if(extras.containsKey(EXTRA_OPMODE)) {
 				opmode = extras.getInt(EXTRA_OPMODE);
 			}
 		}
 		is_system	= isRunningAsSystem();
+		Logger.Log(TAG + METHOD, " binding to client.");
 		return mService.getBinder();
 	}
 	
 	// Methods for CallMonitorReceiver and OutgoingCallReceiver to report events
 	
 	/**
-	 * Used by CallMonitorReceiver to report a change in call state.
-	 * The new call state is communicated to the binded apps.
+	 * Records the start of a call.
+	 * If the call is incoming (MT), then it is communicated to the 
+	 * bound client.
 	 * 
 	 * @param direction		direction of the call
 	 * @param mt_msisdn		incoming number (for MT calls)
@@ -207,9 +218,9 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	public void startCall(String direction, String mt_msisdn) {
 		final String METHOD = "::startCall()  ";
 		is_oncall = true;
-		Log.i(TAG + METHOD, " Starting call. Direction = " + direction);
+		Logger.Log(TAG + METHOD, " Starting call. Direction = " + direction);
 		if(mCallDescription == null) {
-			mCallDescription = new CallDescription(this, direction, CallMonitorReceiver.signalstrength);
+			mCallDescription = new CallDescription(this, direction, signalstrength);
 			if(mt_msisdn != null && !mt_msisdn.isEmpty()) {
 				int plength = mt_msisdn.length();
 				plength = (plength > 6) ? 6 : plength;	// prefix is, at most, 6 char long	
@@ -227,20 +238,24 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	}
 	
 	/**
-	 * Ends a call
+	 * Records the end of a call
 	 * The call info is written to the call log.
+	 * 
 	 * If the disconnection is triggered by the client hanging up, then the 
 	 * client must communicate this to this service before actually hanging up. 
 	 */
-	public void endCall(int strength) {
+	public void endCall() {
 		final String METHOD = "::endCall()  ";
-		Log.i(TAG + METHOD, " Ending call.");
-		String side = CallDescription.CALL_DISCONNECTED_BY_NW;
-		if(is_client_diconnect) {
+		Logger.Log(TAG + METHOD, " Ending call.");
+		String side = (opmode == OPMODE_BG) ? 
+						CallDescription.CALL_DISCONNECTED_BY_UNK : 
+						CallDescription.CALL_DISCONNECTED_BY_NW;
+		if(is_client_diconnect) {	// will not be set in background mode
 			side = CallDescription.CALL_DISCONNECTED_BY_UE;
+			is_client_diconnect = false;
 		}
 		if(mCallDescription != null) {
-			mCallDescription.endCall(side, strength);
+			mCallDescription.endCall(side, signalstrength);
 			mCallDescription.writeCallInfoToLog();
 			mCallDescription = null;	// no needed any more
 		}
@@ -248,7 +263,7 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 			sendMsg(MSG_SERVER_OUTCALL_END, null);
 		}
 		is_oncall = false;
-		Log.i(TAG + METHOD, " Call terminated.");
+		Logger.Log(TAG + METHOD, " Call terminated.");
 	}
 	
 	/**
@@ -258,18 +273,23 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	 */
 	public void moCallNotif(String bpty) {
 		final String METHOD = "::moCallNotif()  ";
-		Log.i(TAG + METHOD, " MO calls to " + bpty);
+		Logger.Log(TAG + METHOD, " MO calls to " + bpty);
+		is_oncall = true;
+		boolean ismocallongoing = true; // in case the receiver sends multiple CALLSTATE_DIALING
 		if(mCallDescription == null) {
-			mCallDescription = new CallDescription(this, CallDescription.MO_CALL, CallMonitorReceiver.signalstrength);
-		}
-		if(bpty != null && !bpty.isEmpty()) {
-			int plength = bpty.length();
-			plength = (plength > 6) ? 6 : plength;	// prefix is, at most, 6 char long	
-			mCallDescription.setPrefix(bpty.substring(0, plength));
-		}
-		mCallDescription.setDirection(CallDescription.MO_CALL);
-		if(opmode == OPMODE_MO) {
-			sendMsg(MSG_SERVER_OUTCALL_DIALING, null);
+			ismocallongoing = false;
+			mCallDescription = new CallDescription(this, CallDescription.MO_CALL, signalstrength);
+		} 
+		if(!ismocallongoing) {
+			if(bpty != null && !bpty.isEmpty()) {
+				int plength = bpty.length();
+				plength = (plength > 6) ? 6 : plength;	// prefix is, at most, 6 char long	
+				mCallDescription.setPrefix(bpty.substring(0, plength));
+			}
+//			mCallDescription.setDirection(CallDescription.MO_CALL);
+			if(opmode == OPMODE_MO) {
+				sendMsg(MSG_SERVER_OUTCALL_DIALING, null);
+			}
 		}
 	}
 	
@@ -282,22 +302,25 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 		final String METHOD = "::sendMsg()  ";
 		
 		if(mClient != null) {
-			Log.i(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+			Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
 			Message msg = Message.obtain(null, what, 0, 0);
 			if(bundle != null) {
 				msg.setData(bundle);
 			}
 			try {
 				mClient.send(msg);
-				Log.i(TAG + METHOD, "Message sent to client.");
+				Logger.Log(TAG + METHOD, "Message sent to client.");
 			} catch (RemoteException e) {
-				Log.d(TAG + METHOD, e.getClass().getName() + e.toString());
+				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
 			}
 		}
 	}
 	
 	
 	private void activateReceivers() {
+		final String METHOD = "::activateReceivers()  ";
+		
+		Logger.Log(TAG + METHOD, "Activating receivers");
 		mCallMonitorReceiver = new CallMonitorReceiver(this);
 		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		
@@ -309,24 +332,39 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 			mflags |= PhoneStateListener.LISTEN_CALL_STATE;
 		}
 		else {
-			// TODO: start precise call monitor received
+			mPcsr = new PreciseCallStateReceiver(this, this, opmode);
+			mPcsr.listen();
+			Logger.Log(TAG + METHOD, "PreciseCallStateReceiver activated");
 		}
 		telMng.listen(mCallMonitorReceiver, mflags);
+		Logger.Log(TAG + METHOD, "CallMonitorReceiver activated");
 		
-		if(opmode != OPMODE_MT) {	// not needed in receiver mode
+		if(opmode != OPMODE_MT && !is_system) {	// not needed in receiver mode or if running as system
 			mOutgoingCallReceiver = new OutgoingCallReceiver(this);
 			// To get number for outgoing calls
 			IntentFilter mocFilter = new IntentFilter(Intent.ACTION_NEW_OUTGOING_CALL);
 			registerReceiver(mOutgoingCallReceiver, mocFilter);
+			Logger.Log(TAG + METHOD, "OutgoingCallReceiver activated");
 		}
 	}
 	
 	
 	private void deactivateReceivers() {
+		final String METHOD = "::deactivateReceivers()  ";
+		
+		Logger.Log(TAG + METHOD, "Deactivating receivers");
 		TelephonyManager telMng = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		telMng.listen(mCallMonitorReceiver, PhoneStateListener.LISTEN_NONE);
+		Logger.Log(TAG + METHOD, "mCallMonitorReceiver deactivated");
 		if(mOutgoingCallReceiver != null) {
 			unregisterReceiver(mOutgoingCallReceiver);
+			mOutgoingCallReceiver = null;
+			Logger.Log(TAG + METHOD, "OutgoingCallReceiver deactivated");
+		}
+		if(mPcsr != null) {
+			mPcsr.stop();
+			mPcsr = null;
+			Logger.Log(TAG + METHOD, "PreciseCallStateReceiver deactivated");
 		}
 	}
 	
@@ -360,7 +398,7 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	 * Uses reflection to hang an active call up
 	 */
 	private void hangupCallSoft(){
-		final String METHOD = ":hangupCall()  ";
+		final String METHOD = ":hangupCallSoft()  ";
 		try {
 	        //String serviceManagerName = "android.os.IServiceManager";
 	        String serviceManagerName = "android.os.ServiceManager";
@@ -406,9 +444,10 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	        //telephonyAnswerCall = telephonyClass.getMethod("answerRingingCall");
 
 	        telephonyEndCall.invoke(telephonyObject);
+	        Logger.Log(TAG + METHOD, "Call disconnected.");
 
 	    } catch (Exception e) {
-			Log.d(TAG + METHOD, "Exception: " + e.getMessage());
+			Logger.Log(TAG + METHOD, "Exception: " + e.getMessage());
 	    }
 	}
 	
@@ -418,23 +457,97 @@ public class CallMonitorService extends Service implements CallMonitorInterface 
 	 * precise call state monitoring.
 	 */
 	private void hangupCallHard() {
-		
+		final String METHOD = ":hangupCallHard()  ";
+		mPcsr.hangupCall();
+		Logger.Log(TAG + METHOD, "Call disconnected.");
 	}
 	
 	
 	// INTERFACE CallMonitorInterface
 	
 	public void csmif_ServiceState(final int what) {
+		final String METHOD = ":csmif_ServiceState()  ";
+		Logger.Log(TAG + METHOD, "Service state = " + Integer.toString(what));
 		sendMsg(what, null);
 	}
 	
 	
 	public void csmif_CallState(final int state, final String extra) {
+		final String METHOD = ":csmif_CallState()  ";
 		
+		switch(state) {
+			case CALLSTATE_IDLE:
+				Logger.Log(TAG + METHOD, "Call state = IDLE");
+				if(extra != null && !extra.isEmpty() && mCallDescription != null) {
+					mCallDescription.setDisconnectionCause(extra);
+				}
+				endCall();
+				break;
+			case CALLSTATE_OFFHOOK:
+				Logger.Log(TAG + METHOD, "Call state = OFFHOOK");
+				startCall(CallDescription.MO_CALL, extra);
+				break;
+			case CALLSTATE_DIALING:
+				Logger.Log(TAG + METHOD, "Call state = DIALING");
+				moCallNotif(extra);
+				break;
+			case CALLSTATE_INCOMING:
+				Logger.Log(TAG + METHOD, "Call state = INCOMING");
+				startCall(CallDescription.MT_CALL, extra);
+				break;
+			case CALLSTATE_ALERTING:
+				Logger.Log(TAG + METHOD, "Call state = ALERTING");
+				if(mCallDescription != null) {
+					mCallDescription.setAlertingTime();
+				}
+				break;
+			case CALLSTATE_RINGING:
+				Logger.Log(TAG + METHOD, "Call state = RINGING");
+				startCall(CallDescription.MT_CALL, extra);
+				break;
+			case CALLSTATE_ACTIVE:
+				Logger.Log(TAG + METHOD, "Call state = ACTIVE");
+				if(mCallDescription != null) {
+					mCallDescription.setActiveTime();
+				}
+				sendMsg(MSG_SERVER_CALL_ACTIVE, null);
+				break;
+			case CALLSTATE_DISCONNECTING:
+				Logger.Log(TAG + METHOD, "Call state = DISCONNECTING");
+				// extra may contain a disconnection cause
+				if(extra != null && !extra.isEmpty() && mCallDescription != null) {
+					mCallDescription.setDisconnectionCause(extra);
+				}
+				break;
+			case CALLSTATE_DISCONNECTED:
+				Logger.Log(TAG + METHOD, "Call state = DISCONNECTED");
+				// extra may contain a disconnection cause
+				if(extra != null && !extra.isEmpty() && mCallDescription != null) {
+					mCallDescription.setDisconnectionCause(extra);
+				}
+				break;
+			case CALLSTATE_HOLDING:
+				Logger.Log(TAG + METHOD, "Call state = HOLDING");
+				break;
+			case CALLSTATE_WAITING:
+				Logger.Log(TAG + METHOD, "Call state = WAITING");
+				break;
+		}
 	}
 	
 	
 	public void csmif_SrvccEvent() {
-		
+		mCallDescription.setSrvccTime();
 	}
+	
+	
+	public void csmif_SignalStrength(int strength) {
+		signalstrength = strength;
+	}
+	
+	
+	public boolean csmif_isCallOngoing() {
+		return is_oncall;
+	}
+	
 }
