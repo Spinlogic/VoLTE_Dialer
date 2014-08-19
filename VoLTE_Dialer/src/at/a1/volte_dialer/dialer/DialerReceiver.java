@@ -19,13 +19,15 @@ package at.a1.volte_dialer.dialer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.spinlogic.logger.SP_Logger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
 public class DialerReceiver extends BroadcastReceiver  {
 	public static final String TAG = "DialerReceiver";
-	private final static Logger LOGGER = Logger.getLogger(DialerReceiver.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	public static DsHandlerInterface dsIf = null;
 	

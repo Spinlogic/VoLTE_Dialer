@@ -36,19 +36,21 @@ public class SP_Logger {
 	  static private FileHandler fileTxt;
 	  static private SimpleFormatter formatterTxt;
 	  
-	  public static final String FN_LOGDIR 	= "volte_dialer";
+	  public static final String LOGGER_NAME	= "at.a1.volte_dialer";
+	  public static final String FN_LOGDIR		= "volte_dialer";
 
 	  static public void setup() throws IOException {
 
 	    // get the global logger to configure it
-	    Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+//	    Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+		Logger logger = Logger.getLogger(LOGGER_NAME);
 
 	    // suppress the logging output to the console
-	    Logger rootLogger = Logger.getLogger("");
-	    Handler[] handlers = rootLogger.getHandlers();
-	    if (handlers[0] instanceof ConsoleHandler) {
-	      rootLogger.removeHandler(handlers[0]);
-	    }
+//	    Logger rootLogger = Logger.getLogger("");
+//	    Handler[] handlers = rootLogger.getHandlers();
+//	    if (handlers[0] instanceof ConsoleHandler) {
+//	      rootLogger.removeHandler(handlers[0]);
+//	    }
 	    
 //		We have to select which log file to use.
 	    String logpath = "";
@@ -65,13 +67,12 @@ public class SP_Logger {
 		}
 
 	    logger.setLevel(Level.INFO);
-	    fileTxt = new FileHandler(logpath + "/logging%u_%g.log", 5242880, 5);
+	    fileTxt = new FileHandler(logpath + "/logging_%u_%g.log", 5242880, 5);
 
 	    // create a TXT formatter
 	    formatterTxt = new SimpleFormatter();
 	    fileTxt.setFormatter(formatterTxt);
 	    logger.addHandler(fileTxt);
-
 	  }
 
 }

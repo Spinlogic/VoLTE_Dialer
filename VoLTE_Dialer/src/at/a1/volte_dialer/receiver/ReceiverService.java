@@ -21,6 +21,7 @@ package at.a1.volte_dialer.receiver;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.spinlogic.logger.SP_Logger;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ComponentName;
@@ -50,7 +51,7 @@ import at.a1.volte_dialer.callmonitor.CallMonitorService;
  */
 public class ReceiverService extends Service {
 	private final static String TAG = "ReceiverService";
-	private final static Logger LOGGER = Logger.getLogger(ReceiverService.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	// Messages to this service from the calling activity
 	static final public int MSG_NEW_SUFFIX 			= 1;

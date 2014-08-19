@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.spinlogic.logger.SP_Logger;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -40,7 +41,7 @@ import android.os.Message;
  */
 public class PreciseCallStateReceiver {
 	private static final String TAG = "PreciseCallStateReceiver";
-	private final static Logger LOGGER = Logger.getLogger(PreciseCallStateReceiver.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	private static final int EVENT_PRECISE_CALL_STATE_CHANGED 	= 101;
 	private static final int EVENT_NEW_RINGING_CONNECTION 		= 102;

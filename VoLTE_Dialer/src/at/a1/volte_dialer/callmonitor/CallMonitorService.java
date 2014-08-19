@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.spinlogic.logger.SP_Logger;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
@@ -36,7 +37,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import at.a1.volte_dialer.VD_Settings;
 
 
 /**
@@ -50,7 +50,7 @@ import at.a1.volte_dialer.VD_Settings;
  */
 public class CallMonitorService extends Service implements CallMonitorInterface {
 	private static final String TAG = "CallMonitorService";
-	private final static Logger LOGGER = Logger.getLogger(CallMonitorService.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	// Extras for the intent create by the client
 	final static public String EXTRA_OPMODE 		= "opmode";		

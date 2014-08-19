@@ -20,6 +20,7 @@ package at.a1.volte_dialer.dialer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.spinlogic.logger.SP_Logger;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -52,7 +53,7 @@ import at.a1.volte_dialer.callmonitor.CallMonitorService;
  */
 public class DialerService extends Service implements DsHandlerInterface {
 	private final String TAG = "DialerService";
-	private final static Logger LOGGER = Logger.getLogger(DialerService.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	static final public String INTENT_ACTION_ALARM = "at.a1.volte_dialer.alarm";
 	

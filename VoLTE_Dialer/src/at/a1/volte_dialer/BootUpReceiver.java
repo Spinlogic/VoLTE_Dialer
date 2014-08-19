@@ -22,6 +22,7 @@ package at.a1.volte_dialer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.spinlogic.logger.SP_Logger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +30,7 @@ import at.a1.volte_dialer.callmonitor.CallMonitorService;
 
 public class BootUpReceiver extends BroadcastReceiver{
 	private static final String TAG = "BootUpReceiver";
-	private final static Logger LOGGER = Logger.getLogger(BootUpReceiver.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 
 	
 	@Override

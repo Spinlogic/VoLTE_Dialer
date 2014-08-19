@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.spinlogic.logger.SP_Logger;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
@@ -54,7 +56,7 @@ import at.a1.volte_dialer.receiver.ReceiverService;
 
 public class VDMainActivity extends Activity {
 	private final String TAG = "VDMainActivity";
-	private final static Logger LOGGER = Logger.getLogger(VDMainActivity.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	private Thread 			count_thread;
 	private Messenger		mReceiverService	= null;		// to send messages to ReceiverService

@@ -26,11 +26,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.spinlogic.logger.SP_Logger;
 import android.os.Environment;
 
 public class CallLogger {
 	final static String TAG = "CallLogger";
-	private final static Logger LOGGER = Logger.getLogger(CallLogger.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	public static final String	CSV_CHAR	= ",";	// character to separate entries in log
 	

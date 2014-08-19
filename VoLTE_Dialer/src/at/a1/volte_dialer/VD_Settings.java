@@ -20,6 +20,8 @@ package at.a1.volte_dialer;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.spinlogic.logger.SP_Logger;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
@@ -27,7 +29,7 @@ import android.preference.PreferenceManager;
 
 public class VD_Settings {
 	private static final String TAG = "VD_Settings";
-	private final static Logger LOGGER = Logger.getLogger(VD_Settings.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	public static final String PREF_MSIDN			= "pref_key_mt_msisdn";
 	public static final String PREF_RECEIVER		= "pref_key_receiver";

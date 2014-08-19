@@ -21,6 +21,8 @@ package at.a1.volte_dialer.callmonitor;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.spinlogic.logger.SP_Logger;
 import android.content.Context;
 import android.telephony.CellIdentityCdma;
 import android.telephony.CellIdentityGsm;
@@ -38,7 +40,7 @@ import android.telephony.gsm.GsmCellLocation;
 
 public class CallDescription {
 	private final String TAG = "CallDescription";
-	private final static Logger LOGGER = Logger.getLogger(CallDescription.class.getName());
+	private final static Logger LOGGER = Logger.getLogger(SP_Logger.LOGGER_NAME);
 	
 	private static final String ACCESS_UNKNOWN	= "Unknown";
 	private static final String ACCESS_LTE		= "LTE";
@@ -133,7 +135,7 @@ public class CallDescription {
 						 Integer.toString(startsignalstrength)	+ CallLogger.CSV_CHAR +
 						 endcellinfo							+ CallLogger.CSV_CHAR +
 						 Integer.toString(endsignalstrength)	+ CallLogger.CSV_CHAR +
-						 Long.toString(srvcc);
+						 Long.toString(srvcctime);
 		CallLogger.appendLog(logline, starttime);
 	}
 	
