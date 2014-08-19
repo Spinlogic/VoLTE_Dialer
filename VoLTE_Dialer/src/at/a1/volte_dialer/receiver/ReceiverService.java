@@ -18,7 +18,9 @@
 
 package at.a1.volte_dialer.receiver;
 
-import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.ComponentName;
@@ -32,7 +34,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.view.KeyEvent;
-import at.a1.volte_dialer.Globals;
 import at.a1.volte_dialer.callmonitor.CallMonitorService;
 
 /**
@@ -48,8 +49,8 @@ import at.a1.volte_dialer.callmonitor.CallMonitorService;
  *
  */
 public class ReceiverService extends Service {
-	
 	private final static String TAG = "ReceiverService";
+	private final static Logger LOGGER = Logger.getLogger(ReceiverService.class.getName());
 	
 	// Messages to this service from the calling activity
 	static final public int MSG_NEW_SUFFIX 			= 1;
@@ -80,10 +81,12 @@ public class ReceiverService extends Service {
         	final String METHOD = "::CmsHandler::handleMessage()  ";
             switch (msg.what) {
                 case CallMonitorService.MSG_SERVER_INCOMING_CALL:
-                	Logger.Log(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
+//                	Logger.Log(TAG + METHOD, "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
+                	LOGGER.info(TAG + METHOD + "MSG_SERVER_INCOMING_CALL received from CallMonitorService.");
                 	Bundle srv_data = msg.getData();
                 	String msisdn = srv_data.getString(CallMonitorService.EXTRA_MTC_MSISDN);
-                	Logger.Log(TAG + METHOD, "MSISDN: " + msisdn);
+//                	Logger.Log(TAG + METHOD, "MSISDN: " + msisdn);
+                	LOGGER.info(TAG + METHOD + "MSISDN: " + msisdn);
                 	if(msisdn != null) {
                 		if(msisdn.endsWith(suffix)) {
                 			sendMsg(mRsClient, MSG_RS_NEWCALLATTEMPT, null);
@@ -91,7 +94,8 @@ public class ReceiverService extends Service {
                 		}
                 	}
                 	else {
-                		Logger.Log(TAG + METHOD, "ERROR null MISDN received.");
+//                		Logger.Log(TAG + METHOD, "ERROR null MISDN received.");
+                		LOGGER.info(TAG + METHOD + "ERROR null MISDN received.");
                 	}
                     break;
                 default:
@@ -111,18 +115,21 @@ public class ReceiverService extends Service {
         	final String METHOD = "::IncomingHandler::handleMessage()  ";
             switch (msg.what) {
                 case MSG_NEW_SUFFIX:
-                	Logger.Log(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
+//                	Logger.Log(TAG + METHOD, "MSG_NEW_PREFIX received from activity.");
+                	LOGGER.info(TAG + METHOD + "MSG_NEW_PREFIX received from activity.");
                 	Bundle bsuffix = msg.getData();
                 	String newsuffix = bsuffix.getString(EXTRA_SUFFIX);
                 	if(newsuffix != null) {
                 		suffix = newsuffix;
                 	}
                 	else {
-                		Logger.Log(TAG + METHOD, "ERROR null suffix received.");
+//                		Logger.Log(TAG + METHOD, "ERROR null suffix received.");
+                		LOGGER.info(TAG + METHOD + "ERROR null suffix received.");
                 	}
                     break;
                 case MSG_CLIENT_ADDHANDLER:
-                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+//                	Logger.Log(TAG + METHOD, "MSG_CLIENT_ADDHANDLER received from activity.");
+                	LOGGER.info(TAG + METHOD + "MSG_CLIENT_ADDHANDLER received from activity.");
                 	mRsClient = msg.replyTo;
                 	break;
                 default:
@@ -138,6 +145,7 @@ public class ReceiverService extends Service {
 		mCmsClient 	= new Messenger(new CmsHandler());
 		mRsClient	= null;
 		mRsServer 	= new Messenger(new IncomingHandler());
+		LOGGER.setLevel(Level.INFO);
 	}
 	
 	
@@ -147,13 +155,15 @@ public class ReceiverService extends Service {
         	final String METHOD = "::ServiceConnection::onServiceConnected()  ";
         	mCmsServer = new Messenger(service);
             sendMsg(mCmsServer, CallMonitorService.MSG_CLIENT_ADDHANDLER, mCmsClient);
-            Logger.Log(TAG + METHOD, "Bound to CallMonitorService");
+//            Logger.Log(TAG + METHOD, "Bound to CallMonitorService");
+            LOGGER.info(TAG + METHOD + "Bound to CallMonitorService");
         }
 
         public void onServiceDisconnected(ComponentName className) {
         	final String METHOD = "::ServiceConnection::onServiceDisconnected()  ";
         	mCmsServer = null;
-            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
+//            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
+            LOGGER.info(TAG + METHOD + "Unbound to CallMonitorService");
         }
     };
 	
@@ -186,9 +196,11 @@ public class ReceiverService extends Service {
             Intent monintent = new Intent(this, CallMonitorService.class);
             stopService(monintent);
             mCmsServer = null;
-            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
+//            Logger.Log(TAG + METHOD, "Unbound to CallMonitorService");
+            LOGGER.info(TAG + METHOD + "Unbound to CallMonitorService");
         }
-		Logger.Log(TAG + METHOD, "service stopped");
+//		Logger.Log(TAG + METHOD, "service stopped");
+		LOGGER.info(TAG + METHOD + "service stopped");
 	}
 
 	
@@ -204,8 +216,8 @@ public class ReceiverService extends Service {
 		Intent monintent = new Intent(this, CallMonitorService.class);
 		monintent.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_MT);
 		bindService(monintent, mConnection, Context.BIND_AUTO_CREATE);
-		Logger.Log(TAG + METHOD, "Binding to CallMonitorService");
-		
+//		Logger.Log(TAG + METHOD, "Binding to CallMonitorService");
+		LOGGER.info(TAG + METHOD + "Binding to CallMonitorService");
 		return mRsServer.getBinder();
 	}
 	
@@ -222,20 +234,24 @@ public class ReceiverService extends Service {
 		final String METHOD = "::sendMsg()  ";
 		
 		if(toMsgr != null) {
-			Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+//			Logger.Log(TAG + METHOD, "Sending message to client. What = " + Integer.toString(what));
+			LOGGER.info(TAG + METHOD + "Sending message to client. What = " + Integer.toString(what));
 			Message msg = Message.obtain(null, what, 0, 0);
 			if(rplyToMsgr != null) {
 				msg.replyTo = rplyToMsgr;
 			}
 			try {
 				toMsgr.send(msg);
-				Logger.Log(TAG + METHOD, "Message sent to client.");
+//				Logger.Log(TAG + METHOD, "Message sent to client.");
+				LOGGER.info(TAG + METHOD + "Message sent to client.");
 			} catch (RemoteException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
 		}
 		else {
-			Logger.Log(TAG + METHOD, "ERROR. Null value for toMsgr.");
+//			Logger.Log(TAG + METHOD, "ERROR. Null value for toMsgr.");
+			LOGGER.info(TAG + METHOD + "ERROR. Null value for toMsgr.");
 		}
 	}
 	
@@ -248,7 +264,8 @@ public class ReceiverService extends Service {
     	            KeyEvent.KEYCODE_HEADSETHOOK));
     		sendOrderedBroadcast(i, null);
     	} catch(Exception e) {
-    		Logger.Log(TAG + METHOD, "Exception: " + e);
+//    		Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+    		LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
     	}
     }
 }

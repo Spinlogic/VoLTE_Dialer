@@ -19,9 +19,8 @@
 package at.a1.volte_dialer.callmonitor;
 
 import java.util.List;
-
-import net.spinlogic.logger.Logger;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import android.content.Context;
 import android.telephony.CellIdentityCdma;
 import android.telephony.CellIdentityGsm;
@@ -38,8 +37,8 @@ import android.telephony.cdma.CdmaCellLocation;
 import android.telephony.gsm.GsmCellLocation;
 
 public class CallDescription {
-	
 	private final String TAG = "CallDescription";
+	private final static Logger LOGGER = Logger.getLogger(CallDescription.class.getName());
 	
 	private static final String ACCESS_UNKNOWN	= "Unknown";
 	private static final String ACCESS_LTE		= "LTE";
@@ -91,6 +90,7 @@ public class CallDescription {
 		startsignalstrength	= strength;
 		endsignalstrength	= 99;	// unknown
 		srvcc				= 0;
+		LOGGER.setLevel(Level.INFO);
 	}
 	
 	/**
@@ -134,7 +134,7 @@ public class CallDescription {
 						 endcellinfo							+ CallLogger.CSV_CHAR +
 						 Integer.toString(endsignalstrength)	+ CallLogger.CSV_CHAR +
 						 Long.toString(srvcc);
-		CallLogger.appendLog(logline);
+		CallLogger.appendLog(logline, starttime);
 	}
 	
 	public void setPrefix(String msisdn_prefix) {
@@ -258,7 +258,8 @@ public class CallDescription {
 		            returnvalue +=  String.valueOf(cdmaLoc.getBaseStationId());
 	        	} catch(ClassCastException ex) {
 	        		returnvalue +=  ACCESS_UNKNOWN;
-	        		Logger.Log(TAG + METHOD, ex.getMessage());
+//	        		Logger.Log(TAG + METHOD, ex.getMessage());
+	        		LOGGER.info(TAG + METHOD + ex.getClass().getName() + ex.toString());
 	        	}
 	        }
 		}

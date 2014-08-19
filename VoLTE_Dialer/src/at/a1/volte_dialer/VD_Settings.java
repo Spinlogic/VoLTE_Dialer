@@ -18,13 +18,16 @@
 
 package at.a1.volte_dialer;
 
-import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 
 public class VD_Settings {
+	private static final String TAG = "VD_Settings";
+	private final static Logger LOGGER = Logger.getLogger(VD_Settings.class.getName());
 	
 	public static final String PREF_MSIDN			= "pref_key_mt_msisdn";
 	public static final String PREF_RECEIVER		= "pref_key_receiver";
@@ -33,15 +36,21 @@ public class VD_Settings {
 	public static final String PREF_SENDLOGSURL		= "pref_key_sendlogsurl";
 	public static final String PREF_DELETELOG		= "pref_key_deletelogfile";
 	public static final String PREF_BGMODE			= "pref_key_bgmode";
+	
+	public VD_Settings() {
+		LOGGER.setLevel(Level.INFO);
+	}
 
 	public static String getStringPref(Context c, String prefname, String defvalue) {
+		final String METHOD = "::getStringPref()  ";
 		String result = defvalue;
 		
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
 		try {
 			result = prefs.getString(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+//			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 		return result;
 	}
@@ -54,13 +63,15 @@ public class VD_Settings {
 	}
 	
 	public static boolean getBoolPref(Context c, String prefname, boolean defvalue) {
+		final String METHOD = "::getBoolPref()  ";
 		boolean result = defvalue;
 		
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
 		try {
 			result = prefs.getBoolean(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+//			Logger.Log("VD_Settings::getStringPref    ClassCastException: ", e.getMessage());
+			LOGGER.info(TAG + METHOD + "ClassCastException: " + e.getMessage());
 		}
 		return result;
 	}
@@ -73,13 +84,15 @@ public class VD_Settings {
 	}
 	
 	public static long getLongPref(Context c, String prefname, long defvalue) {
+		final String METHOD = "::getLongPref()  ";
 		long result = defvalue;
 		
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
 		try {
 			result = prefs.getLong(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Logger.Log("VD_Settings::getLongPref    ClassCastException: ", e.getMessage());
+//			Logger.Log("VD_Settings::getLongPref    ClassCastException: ", e.getMessage());
+			LOGGER.info(TAG + METHOD + "ClassCastException: " + e.getMessage());
 		}
 		return result;
 	}
@@ -92,13 +105,15 @@ public class VD_Settings {
 	}
 	
 	public static int getIntPref(Context c, String prefname, int defvalue) {
+		final String METHOD = "::getIntPref()  ";
 		int result = defvalue;
 		
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
 		try {
 			result = prefs.getInt(prefname, defvalue);
 		} catch(ClassCastException e) {
-			Logger.Log("VD_Settings::getIntPref    ClassCastException: ", e.getMessage());
+//			Logger.Log("VD_Settings::getIntPref    ClassCastException: ", e.getMessage());
+			LOGGER.info(TAG + METHOD + "ClassCastException: " + e.getMessage());
 		}
 		return result;
 	}

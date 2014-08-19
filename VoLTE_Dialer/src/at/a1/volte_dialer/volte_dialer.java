@@ -18,9 +18,12 @@
 
 package at.a1.volte_dialer;
 
-import net.spinlogic.logger.Logger;
+import java.io.IOException;
+
+import net.spinlogic.logger.SP_Logger;
 import android.app.Application;
 import android.telephony.ServiceState;
+import android.util.Log;
 
 public class volte_dialer extends Application {
 	
@@ -61,7 +64,14 @@ public class volte_dialer extends Application {
         Globals.iservicestate 	= ServiceState.STATE_OUT_OF_SERVICE;	// default initial service state
         Globals.icallnumber 	= 0;
         Globals.is_mtc_ongoing	= false;
-        Logger.initializeValues();
+//        Logger.initializeValues();
+        try {
+        	SP_Logger.setup();
+        } catch (IOException e) {
+            Log.d("VOLTE_DIALER", "Problem creating log file");
+        }
+        VD_Settings settings = new VD_Settings(); // initialize log level
+        settings = null;	// not needed anymore
     }
 		
 }

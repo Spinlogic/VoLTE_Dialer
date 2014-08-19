@@ -20,7 +20,6 @@ package at.a1.volte_dialer;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import net.spinlogic.logger.Logger;
 import android.os.Binder;
 import android.os.IBinder;
 
@@ -34,9 +33,6 @@ public class Globals {
 	final static String TAG = "Globals";
 	
 	// ---- Constants ----
-	public static final String FN_VDDIR 	= "volte_dialer";		// This is the directory in the external 
-																	//	storage where reports are stored
-	public static final String FN_VDLOG 	= "vdlog.txt";			// Log file
 	public static final String DEF_MSISDN 	= "066466618";			// Default test number where to call to
 	public static final int RIGHT_MATCH		= 6;					// MSISDN right matching for this number of digits 
 	public static final String DEF_EMAIL 	= "juan.noguera@a1telekom.at";	

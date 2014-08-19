@@ -24,11 +24,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import android.os.Environment;
 
 public class CallLogger {
 	final static String TAG = "CallLogger";
+	private final static Logger LOGGER = Logger.getLogger(CallLogger.class.getName());
 	
 	public static final String	CSV_CHAR	= ",";	// character to separate entries in log
 	
@@ -44,8 +46,8 @@ public class CallLogger {
 	 * it logs any data.
 	 */
 	public static void initializeValues() {
+		LOGGER.setLevel(Level.INFO);
 		String state = Environment.getExternalStorageState();
-		
 		//	We have to select which log file to use.
 		if (Environment.MEDIA_MOUNTED.equals(state)) {
 			File path = new File(Environment.getExternalStorageDirectory() + File.separator + FN_VDDIR);
@@ -58,7 +60,7 @@ public class CallLogger {
 	}
 
 	
-	public static void appendLog(String text) {
+	public static void appendLog(String text, long date) {
 		String METHOD = "::appendLog ";
 		
 		if (!logFile.exists()) {
@@ -66,25 +68,28 @@ public class CallLogger {
 				if(logFile.createNewFile()) {
 					// Write the header. Must correspond with logged fields in 
 					// at.a1.volte_dialer_dialer.CallDescription
-					String logline = "DATE,TIME,DIRECTION,PREFIX,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
+					String logline = "DATE,START TIME,DIRECTION,PREFIX,DURATION,ALERTING,CONNECTED,DISCONNECTION SIDE," +
 									 "DISCONNECT CAUSE,START CID,START SIGNAL,END CID,END SIGNAL,SRVCC";
 					insertLine(logline);
-					Logger.Log(TAG + METHOD, "appendLog: Creating new logfile");
+//					Logger.Log(TAG + METHOD, "appendLog: Creating new logfile");
+					LOGGER.info(TAG + METHOD + "appendLog: Creating new logfile");
 				}
 			}
 			catch (IOException e) {
-				Logger.Log(TAG, METHOD + e.getMessage());
+//				Logger.Log(TAG, METHOD + e.getMessage());
+				LOGGER.info(TAG + METHOD + "appendLog: Creating new logfile");
 			}
 		}
 		try {
 			//	Prepend date and time information to the log data
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd,HH:mm:ss");
-			String currentDateandTime = sdf.format(new Date());
+			String currentDateandTime = sdf.format(new Date(date));
 			String logline = currentDateandTime + "," + text;
 			insertLine(logline);
 		}
 		catch (IOException e) {
-			Logger.Log(TAG, METHOD + e.getMessage());
+//			Logger.Log(TAG, METHOD + e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	

@@ -17,13 +17,15 @@
  */
 package at.a1.volte_dialer.dialer;
 
-import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
 public class DialerReceiver extends BroadcastReceiver  {
 	public static final String TAG = "DialerReceiver";
+	private final static Logger LOGGER = Logger.getLogger(DialerReceiver.class.getName());
 	
 	public static DsHandlerInterface dsIf = null;
 	
@@ -31,17 +33,23 @@ public class DialerReceiver extends BroadcastReceiver  {
 		dsIf = ds;
 	} */
 	
+	static public void initLogger() {
+		LOGGER.setLevel(Level.INFO);
+	}
+	
     @Override
     public void onReceive(final Context context, Intent intent) {
     	final String METHOD = ":onReceive()  ";
     	
     	if(dsIf != null) {
 	    	if(dsIf.dsIf_isCallOngoing()) {
-	    		Logger.Log(TAG + METHOD, "Terminate call.");
+//	    		Logger.Log(TAG + METHOD, "Terminate call.");
+	    		LOGGER.info(TAG + METHOD + "Terminate call.");
 	    		dsIf.dsIf_endCall();
 	    	}
 	    	else {
-	    		Logger.Log(TAG + METHOD, "Trigger new call.");
+//	    		Logger.Log(TAG + METHOD, "Trigger new call.");
+	    		LOGGER.info(TAG + METHOD + "Trigger new call.");
 	    		dsIf.dsIf_dialCall();
 	    	}
     	}

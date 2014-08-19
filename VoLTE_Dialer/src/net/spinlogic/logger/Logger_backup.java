@@ -28,7 +28,7 @@ import java.util.Date;
 import android.os.Environment;
 import android.util.Log;
 
-public class Logger {
+public class Logger_backup {
 	public static final String TAG 	= "Logger";
 	
 	static File 			logFile;

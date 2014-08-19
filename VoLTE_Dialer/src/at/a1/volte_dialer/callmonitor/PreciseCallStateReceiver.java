@@ -20,7 +20,9 @@ package at.a1.volte_dialer.callmonitor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
@@ -38,6 +40,7 @@ import android.os.Message;
  */
 public class PreciseCallStateReceiver {
 	private static final String TAG = "PreciseCallStateReceiver";
+	private final static Logger LOGGER = Logger.getLogger(PreciseCallStateReceiver.class.getName());
 	
 	private static final int EVENT_PRECISE_CALL_STATE_CHANGED 	= 101;
 	private static final int EVENT_NEW_RINGING_CONNECTION 		= 102;
@@ -62,6 +65,7 @@ public class PreciseCallStateReceiver {
 		currentRgCallState = "IDLE";
 		currentBgCallState = "IDLE";
 		mHandler		= new PreciseCallEventsHandler(this);
+		LOGGER.setLevel(Level.INFO);
 	}
 	
 	public void listen() {
@@ -103,7 +107,8 @@ public class PreciseCallStateReceiver {
         @Override
         public void handleMessage(Message msg) {
         	final String METHOD = "::PreciseCallEventsHandler::handleMessage()  ";
-        	Logger.Log(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
+//        	Logger.Log(TAG + METHOD, "  Message: " + Integer.toString(msg.what));
+        	LOGGER.info(TAG + METHOD + "  Message: " + Integer.toString(msg.what));
             switch (msg.what) {
                 case EVENT_PRECISE_CALL_STATE_CHANGED:
                 	processPrecisseCallEvent(msg.obj);
@@ -152,12 +157,18 @@ public class PreciseCallStateReceiver {
 //        		String new_rgcall_state = getCallState(mRgCall);
 //        		String new_bgcall_state = getCallState(mBgCall);
         		
-        		Logger.Log(TAG + METHOD, "\n\tCurrent FG = " + currentFgCallState + 
-        							"    RG = " + currentRgCallState +
-        							"    BG = " + currentBgCallState +
-        							"\n\tNew FG = " + new_fgcall_state +
-        							"    RG = " + new_rgcall_state + 
-        							"    BG = " + new_bgcall_state);
+//        		Logger.Log(TAG + METHOD, "\n\tCurrent FG = " + currentFgCallState + 
+//        							"    RG = " + currentRgCallState +
+//        							"    BG = " + currentBgCallState +
+//        							"\n\tNew FG = " + new_fgcall_state +
+//        							"    RG = " + new_rgcall_state + 
+//        							"    BG = " + new_bgcall_state);
+        		LOGGER.info(TAG + METHOD + "\n\tCurrent FG = " + currentFgCallState + 
+									"    RG = " + currentRgCallState +
+									"    BG = " + currentBgCallState +
+									"\n\tNew FG = " + new_fgcall_state +
+									"    RG = " + new_rgcall_state + 
+									"    BG = " + new_bgcall_state);
         		
         		if(new_bgcall_state != currentBgCallState) {	
         			// TODO: report status for background calls
@@ -174,43 +185,53 @@ public class PreciseCallStateReceiver {
 					
 					if(currentFgCallState == "IDLE") { // IDLE
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_IDLE, null);
-						Logger.Log(TAG + METHOD, "Call State = IDLE");
+//						Logger.Log(TAG + METHOD, "Call State = IDLE");
+						LOGGER.info(TAG + METHOD + "Call State = IDLE");
 					} else if(currentFgCallState == "ACTIVE") { // ACTIVE
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_ACTIVE, null);
-						Logger.Log(TAG + METHOD, "Call State = ACTIVE");
+//						Logger.Log(TAG + METHOD, "Call State = ACTIVE");
+						LOGGER.info(TAG + METHOD + "Call State = ACTIVE");
 					} else if (currentFgCallState == "HOLDING") { // HOLDING
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_HOLDING, null);
-						Logger.Log(TAG + METHOD, "Call State = HOLDING");
+//						Logger.Log(TAG + METHOD, "Call State = HOLDING");
+						LOGGER.info(TAG + METHOD + "Call State = HOLDING");
 					} else if (currentFgCallState == "DIALING") { // DIALING
 						String msisdn = getNumberForOutgoingCall(asyncresult);
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_DIALING, msisdn);
-						Logger.Log(TAG + METHOD, "Call State = DIALING");
+//						Logger.Log(TAG + METHOD, "Call State = DIALING");
+						LOGGER.info(TAG + METHOD + "Call State = DIALING");
 					} else if (currentFgCallState == "ALERTING") { // ALERTING
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_ALERTING, null);
-						Logger.Log(TAG + METHOD, "Call State = ALERTING");
+//						Logger.Log(TAG + METHOD, "Call State = ALERTING");
+						LOGGER.info(TAG + METHOD + "Call State = ALERTING");
 					} else if (currentFgCallState == "INCOMING") { // INCOMING
 						// Never called by the Galaxy S5 (seems to affect only the ringing call)
 	//					String msisdn = getNumber(cCall, oCall);
 	//					mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_INCOMING, msisdn);
-						Logger.Log(TAG + METHOD, "Call State = INCOMING");
+//						Logger.Log(TAG + METHOD, "Call State = INCOMING");
+						LOGGER.info(TAG + METHOD + "Call State = INCOMING");
 					} else if (currentFgCallState == "WAITING") { // WAITING
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_WAITING, null);
-						Logger.Log(TAG + METHOD, "Call State = WAITING");
+//						Logger.Log(TAG + METHOD, "Call State = WAITING");
+						LOGGER.info(TAG + METHOD + "Call State = WAITING");
 					} else if (currentFgCallState == "DISCONNECTED") { // DISCONNECTED
 						String disconnectioncause = getDisconnectCause(asyncresult);
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_DISCONNECTED, disconnectioncause);
-						Logger.Log(TAG + METHOD, "Call State = DISCONNECTED");
+//						Logger.Log(TAG + METHOD, "Call State = DISCONNECTED");
+						LOGGER.info(TAG + METHOD + "Call State = DISCONNECTED");
 					} else if (currentFgCallState == "DISCONNECTING") { // DISCONNECTING
 						String disconnectioncause = getDisconnectCause(asyncresult);
 						mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_DISCONNECTING, disconnectioncause);
-					Logger.Log(TAG + METHOD, "Call State = DISCONNECTING");
+//						Logger.Log(TAG + METHOD, "Call State = DISCONNECTING");
+						LOGGER.info(TAG + METHOD + "Call State = DISCONNECTING");
 					}
         		} else if(new_rgcall_state != currentRgCallState) {
         			// Change of state of ringing call is evaluated next
         			if(new_rgcall_state == "DISCONNECTED" || 
              			   new_rgcall_state == "DISCONNECTING") {	// has been cancelled by NW
              				String disconnectioncause = getDisconnectCauseForIncomingCall(asyncresult);
-             				Logger.Log(TAG + METHOD, "Disconnection cause for Ringing call = " + disconnectioncause);
+ //            				Logger.Log(TAG + METHOD, "Disconnection cause for Ringing call = " + disconnectioncause);
+             				LOGGER.info(TAG + METHOD + "Disconnection cause for Ringing call = " + disconnectioncause);
              				mCmIf.csmif_CallState(CallMonitorService.CALLSTATE_DISCONNECTED, disconnectioncause);
              			} else if(new_rgcall_state == "IDLE" && 
              					  (currentRgCallState == "DISCONNECTED" || 
@@ -223,19 +244,26 @@ public class PreciseCallStateReceiver {
              			currentRgCallState = new_rgcall_state;
              		} 
         	} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (NoSuchFieldException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (ClassNotFoundException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (Exception e) { // Any other exception. For debugging purposes
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
     	}
    
@@ -250,11 +278,14 @@ public class PreciseCallStateReceiver {
 				fResult = cAsyncResult.getDeclaredField("result");
 				oGsmPhone = fResult.get(asyncresult);
 			} catch (NoSuchFieldException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
         	return oGsmPhone;
         }
@@ -334,15 +365,20 @@ public class PreciseCallStateReceiver {
 				Object address = mGetAddress.invoke(oConnection);
 				telnum = address.toString();
 			} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (Exception e) { // Any other exception. For debugging purposes
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
 			return telnum;
         }
@@ -377,15 +413,20 @@ public class PreciseCallStateReceiver {
 				Method mGetAddress = cConnection.getDeclaredMethod("getAddress", (Class[]) null);
 				address = mGetAddress.invoke(oConnection);
 			} catch (ClassNotFoundException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
 			return (address.toString());
         }
@@ -409,17 +450,23 @@ public class PreciseCallStateReceiver {
 				Object cause = mGetDisconnectCause.invoke(oConnection);
 				disconnectioncause = cause.toString();
 			} catch (ClassNotFoundException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (Exception e) { // Any other exception. For debugging purposes
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
 			return disconnectioncause;
         }
@@ -491,17 +538,23 @@ public class PreciseCallStateReceiver {
 					}
 				} */
 			} catch (ClassNotFoundException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
-			Logger.Log(TAG + METHOD, "Disconnect cause = " + disconnectioncause);
+//			Logger.Log(TAG + METHOD, "Disconnect cause = " + disconnectioncause);
+			LOGGER.info(TAG + METHOD + "Disconnect cause = " + disconnectioncause);
 			return disconnectioncause;
         }
     } // class PreciseCallEventsHandler
@@ -518,31 +571,41 @@ public class PreciseCallStateReceiver {
 		Object mPhone = getPhoneInstance();
 		if(mPhone != null) {
 			try {
-				Logger.Log(TAG + METHOD, "Hanging call up.");
+//				Logger.Log(TAG + METHOD, "Hanging call up.");
+				LOGGER.info(TAG + METHOD + "Hanging call up.");
 				Class<?>  cPhone = Class.forName("com.android.internal.telephony.Phone");
 				Method mGetForegroundCall = cPhone.getMethod("getForegroundCall", (Class[]) null);
 				Object mCall = mGetForegroundCall.invoke(mPhone);
-				Logger.Log(TAG + METHOD, "mCall object obtained");
+//				Logger.Log(TAG + METHOD, "mCall object obtained");
+				LOGGER.info(TAG + METHOD + "mCall object obtained");
 				Class<?>  cCall = Class.forName("com.android.internal.telephony.Call");
 				Method mGetState = cCall.getMethod("hangup", (Class[]) null);
 				mGetState.invoke(mCall);
-				Logger.Log(TAG + METHOD, "call hanged");
+//				Logger.Log(TAG + METHOD, "call hanged");
+				LOGGER.info(TAG + METHOD + "call hanged");
 			} catch (ClassNotFoundException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (NoSuchMethodException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalAccessException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (IllegalArgumentException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (InvocationTargetException e) {
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			} catch (Exception e) { // Any other exception. For debugging purposes
-				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//				Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+				LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 			}
 		}
 		else {
-			Logger.Log(TAG + METHOD, "ERROR: Trying to hang call up on null mPhone.");
+//			Logger.Log(TAG + METHOD, "ERROR: Trying to hang call up on null mPhone.");
+			LOGGER.info(TAG + METHOD + "ERROR: Trying to hang call up on null mPhone.");
 		}
 	}
     
@@ -553,19 +616,26 @@ public class PreciseCallStateReceiver {
 			Method mRegisterForStateChange = mPhone.getClass().getMethod("registerForPreciseCallStateChanged",
 														new Class[]{Handler.class, Integer.TYPE, Object.class});            
 			mRegisterForStateChange.invoke(mPhone, mHandler, EVENT_PRECISE_CALL_STATE_CHANGED, null);
-			Logger.Log(TAG + METHOD, "registered to receive precise call events.");
+//			Logger.Log(TAG + METHOD, "registered to receive precise call events.");
+			LOGGER.info(TAG + METHOD + "registered to receive precise call events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -576,19 +646,26 @@ public class PreciseCallStateReceiver {
 			Method mUnregisterForStateChange = 
 				mPhone.getClass().getMethod("unregisterForPreciseCallStateChanged", new Class[]{Handler.class});            
 			mUnregisterForStateChange.invoke(mPhone, mHandler);
-			Logger.Log(TAG + METHOD, "unregistered for precise call events.");
+//			Logger.Log(TAG + METHOD, "unregistered for precise call events.");
+			LOGGER.info(TAG + METHOD + "unregistered for precise call events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -599,19 +676,26 @@ public class PreciseCallStateReceiver {
 			Method mRegisterForInCall = mPhone.getClass().getMethod("registerForNewRingingConnection",
 														new Class[]{Handler.class, Integer.TYPE, Object.class});            
 			mRegisterForInCall.invoke(mPhone, mHandler, EVENT_NEW_RINGING_CONNECTION, null);
-			Logger.Log(TAG + METHOD, "registered to receive incoming call ringing events.");
+//			Logger.Log(TAG + METHOD, "registered to receive incoming call ringing events.");
+			LOGGER.info(TAG + METHOD + "registered to receive incoming call ringing events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -623,19 +707,26 @@ public class PreciseCallStateReceiver {
 			Method mUnregisterForInCall = 
 				mPhone.getClass().getMethod("unregisterForIncomingRing", new Class[]{Handler.class});            
 			mUnregisterForInCall.invoke(mPhone, mHandler);
-			Logger.Log(TAG + METHOD, "unregistered to receive call ringing events.");
+//			Logger.Log(TAG + METHOD, "unregistered to receive call ringing events.");
+			LOGGER.info(TAG + METHOD + "unregistered to receive call ringing events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -646,19 +737,26 @@ public class PreciseCallStateReceiver {
 			Method mRegisterForSrvcc = mPhone.getClass().getMethod("registerForSrvccHandOver",
 														new Class[]{Handler.class, Integer.TYPE, Object.class});            
 			mRegisterForSrvcc.invoke(mPhone, mHandler, EVENT_IMS_SRVCC_HANDOVER, null);
-			Logger.Log(TAG + METHOD, "registered to receive SRVCC events.");
+//			Logger.Log(TAG + METHOD, "registered to receive SRVCC events.");
+			LOGGER.info(TAG + METHOD + "registered to receive SRVCC events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -670,19 +768,26 @@ public class PreciseCallStateReceiver {
 			Method mUnregisterForSrvcc = mPhone.getClass().getMethod("unregisterForSrvccHandOver",
 														new Class[]{Handler.class});            
 			mUnregisterForSrvcc.invoke(mPhone, mHandler);
-			Logger.Log(TAG + METHOD, "unregistered to receive SRVCC events.");
+//			Logger.Log(TAG + METHOD, "unregistered to receive SRVCC events.");
+			LOGGER.info(TAG + METHOD + "unregistered to receive SRVCC events.");
 		} catch (NoSuchMethodException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (InvocationTargetException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalAccessException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (SecurityException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 	    } catch (IllegalArgumentException e) {
-	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//	        Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+	        LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (Exception e) { // Any other exception. For debugging purposes
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 	}
 	
@@ -701,20 +806,27 @@ public class PreciseCallStateReceiver {
 			cPhoneFactory = Class.forName("com.android.internal.telephony.PhoneFactory");
 			Method mMakeDefaultPhone = cPhoneFactory.getMethod("makeDefaultPhone", new Class[] {Context.class});
 			mMakeDefaultPhone.invoke(null, context);			
-			Logger.Log(TAG + METHOD, "makeDefaultPhone() completed");
+//			Logger.Log(TAG + METHOD, "makeDefaultPhone() completed");
+			LOGGER.info(TAG + METHOD + "makeDefaultPhone() completed");
 			Method mGetDefaultPhone = cPhoneFactory.getMethod("getDefaultPhone", (Class[]) null);
 			oPhone = mGetDefaultPhone.invoke(null);
-			Logger.Log(TAG + METHOD, "Got default phone");
+//			Logger.Log(TAG + METHOD, "Got default phone");
+			LOGGER.info(TAG + METHOD + "Got default phone");
 		} catch (ClassNotFoundException e) {
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (NoSuchMethodException e) {
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (IllegalAccessException e) {
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (IllegalArgumentException e) {
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		} catch (InvocationTargetException e) {
-			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+//			Logger.Log(TAG + METHOD, e.getClass().getName() + e.toString());
+			LOGGER.info(TAG + METHOD + e.getClass().getName() + e.toString());
 		}
 		return oPhone;
 	}

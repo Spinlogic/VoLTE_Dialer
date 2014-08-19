@@ -18,7 +18,10 @@
 
 package at.a1.volte_dialer;
 
-import net.spinlogic.logger.Logger;
+//import net.spinlogic.logger.Logger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,14 +29,19 @@ import at.a1.volte_dialer.callmonitor.CallMonitorService;
 
 public class BootUpReceiver extends BroadcastReceiver{
 	private static final String TAG = "BootUpReceiver";
+	private final static Logger LOGGER = Logger.getLogger(BootUpReceiver.class.getName());
+
 	
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		final String METHOD = "::onReceive()  ";
 		
-		Logger.Log(TAG + METHOD, "Checking if service should run in background.");
+		LOGGER.setLevel(Level.INFO);
+//		Logger.Log(TAG + METHOD, "Checking if service should run in background.");
+		LOGGER.info(TAG + METHOD + "Checking if service should run in background.");
 		if(Globals.opmode == Globals.OPMODE_BG) {	// Activate logging service
-			Logger.Log(TAG + METHOD, "Launching CallMonitorService on Boot.");
+//			Logger.Log(TAG + METHOD, "Launching CallMonitorService on Boot.");
+			LOGGER.info(TAG + METHOD + "Launching CallMonitorService on Boot.");
 			Intent cms = new Intent(context, CallMonitorService.class);
 			cms.putExtra(CallMonitorService.EXTRA_OPMODE, CallMonitorService.OPMODE_BG);
     		context.startService(cms);
